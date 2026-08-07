@@ -23,13 +23,17 @@ create table if not exists public.reports (
   geohash             text not null,
   accuracy_meters     integer,
   is_manual_pin       boolean not null default false,
-  five_g_present      text not null check (five_g_present in ('yes','no','maybe')),
-  operator            text check (operator in ('Jazz','Zong')),
-  speed_source        text check (speed_source in ('in_app','manual')),
+  operator            text not null check (operator in ('Jazz','Zong','Ufone')),
+  speed_source        text check (speed_source in ('desktop','mobile','manual')),
   download_mbps       real,
   upload_mbps         real,
   ping_ms             integer,
   speedtest_url       text,
+  device_model        text,
+  carrier             text,
+  isp                 text,
+  server_name         text,
+  wifi_device_model   text,
   device_fingerprint  text not null,
   ip_hash             text not null,
   trust_score         real not null,
@@ -104,16 +108,16 @@ returns table (
   center_lat double precision,
   center_lng double precision,
   total bigint,
-  confirmed bigint,
-  not_available bigint,
-  intermittent bigint,
   avg_download real,
   avg_upload real,
   avg_ping real,
   avg_trust real,
   jazz_count bigint,
+  jazz_avg_download real,
   zong_count bigint,
-  unknown_count bigint
+  zong_avg_download real,
+  ufone_count bigint,
+  ufone_avg_download real
 )
 language sql
 stable
@@ -123,16 +127,16 @@ as $$
     avg(latitude)                                                as center_lat,
     avg(longitude)                                               as center_lng,
     count(*)                                                     as total,
-    count(*) filter (where five_g_present = 'yes')               as confirmed,
-    count(*) filter (where five_g_present = 'no')                as not_available,
-    count(*) filter (where five_g_present = 'maybe')             as intermittent,
     avg(download_mbps)                                           as avg_download,
     avg(upload_mbps)                                             as avg_upload,
     avg(ping_ms)::real                                           as avg_ping,
     avg(trust_score)                                             as avg_trust,
     count(*) filter (where operator = 'Jazz')                    as jazz_count,
+    avg(download_mbps) filter (where operator = 'Jazz')          as jazz_avg_download,
     count(*) filter (where operator = 'Zong')                    as zong_count,
-    count(*) filter (where operator is null)                     as unknown_count
+    avg(download_mbps) filter (where operator = 'Zong')          as zong_avg_download,
+    count(*) filter (where operator = 'Ufone')                   as ufone_count,
+    avg(download_mbps) filter (where operator = 'Ufone')         as ufone_avg_download
   from public.reports
   where status = 'visible'
     and trust_score >= p_min_trust

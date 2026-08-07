@@ -1,6 +1,5 @@
-export type FiveGPresence = "yes" | "no" | "maybe";
-export type SpeedSource = "in_app" | "manual";
-export type OperatorId = "Jazz" | "Zong";
+export type SpeedSource = "desktop" | "mobile" | "manual";
+export type OperatorId = "Jazz" | "Zong" | "Ufone";
 
 export interface SpeedSample {
   source: SpeedSource;
@@ -8,6 +7,12 @@ export interface SpeedSample {
   uploadMbps: number | null;
   pingMs: number | null;
   speedtestUrl: string | null;
+  deviceModel?: string | null;
+  carrier?: string | null;
+  isp?: string | null;
+  serverName?: string | null;
+  isWifi?: boolean;
+  wifiDeviceModel?: string | null;
 }
 
 export interface ReportSubmission {
@@ -15,8 +20,7 @@ export interface ReportSubmission {
   longitude: number;
   accuracyMeters: number | null;
   isManualPin: boolean;
-  fiveGPresent: FiveGPresence;
-  operator: OperatorId | null;
+  operator: OperatorId;
   speed: SpeedSample | null;
   deviceFingerprint: string;
 }
@@ -26,16 +30,16 @@ export interface CoverageCell {
   centerLat: number;
   centerLng: number;
   total: number;
-  confirmed: number;
-  notAvailable: number;
-  intermittent: number;
   avgDownload: number | null;
   avgUpload: number | null;
   avgPing: number | null;
   avgTrust: number;
   jazzCount: number;
+  jazzAvgDownload: number | null;
   zongCount: number;
-  unknownCount: number;
+  zongAvgDownload: number | null;
+  ufoneCount: number;
+  ufoneAvgDownload: number | null;
 }
 
 export interface SubmitOk {

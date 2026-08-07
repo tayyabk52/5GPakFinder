@@ -23,5 +23,7 @@ export function precisionForZoom(zoom: number): number {
   if (zoom < 6) return 4;
   if (zoom < 9) return 5;
   if (zoom < 11) return 6;
-  return 7;
+  if (zoom < 14) return 7;
+  if (zoom < 17) return 8;
+  return 9;
 }

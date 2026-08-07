@@ -1,7 +1,7 @@
 import type { SpeedSample } from "@/features/coverage-reports/types";
 
 export const TRUST_BASE = 50;
-export const TRUST_IN_APP_SPEED = 30;
+export const TRUST_FETCHED_SPEED = 30;
 export const TRUST_MANUAL_WITH_LINK = 30;
 export const TRUST_MANUAL_NO_LINK = 18;
 export const TRUST_ACCURACY_UNDER_30M = 20;
@@ -18,7 +18,12 @@ export interface TrustInput {
 
 function speedPoints(speed: SpeedSample | null): number {
   if (!speed) return 0;
-  if (speed.source === "in_app") return TRUST_IN_APP_SPEED;
+  if (speed.source === "desktop" || speed.source === "mobile") {
+    if (speed.isWifi) {
+      return speed.wifiDeviceModel ? 20 : 10;
+    }
+    return TRUST_FETCHED_SPEED;
+  }
   return speed.speedtestUrl ? TRUST_MANUAL_WITH_LINK : TRUST_MANUAL_NO_LINK;
 }
 

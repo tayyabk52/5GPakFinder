@@ -9,13 +9,14 @@
 import { useState, useMemo, useCallback } from "react";
 import type { CellSiteFeature } from "@/types/cell-site";
 import { deriveCityForSite } from "@/features/cell-sites/utils/siteUtils";
+import { usePhotonSearch, type PhotonFeature } from "./usePhotonSearch";
 
 const MAX_RESULTS = 8;
+const MAX_GEOCODED = 3;
 
-export interface SearchResult {
-  feature: CellSiteFeature;
-  matchedOn: string;
-}
+export type SearchResult =
+  | { type: "cell-site"; feature: CellSiteFeature; matchedOn: string }
+  | { type: "geocoded"; feature: PhotonFeature; matchedOn: string };
 
 export interface UseSearchReturn {
   query: string;
@@ -31,6 +32,7 @@ function normalize(str: string): string {
 
 export function useSearch(features: CellSiteFeature[]): UseSearchReturn {
   const [query, setQueryState] = useState("");
+  const { results: rawPhotonResults, isSearching: isPhotonSearching } = usePhotonSearch(query);
 
   const setQuery = useCallback((q: string) => {
     setQueryState(q);
@@ -64,14 +66,20 @@ export function useSearch(features: CellSiteFeature[]): UseSearchReturn {
 
       for (const [value, label] of searchTargets) {
         if (value && normalize(value).includes(q)) {
-          matches.push({ feature, matchedOn: label });
+          matches.push({ type: "cell-site", feature, matchedOn: label });
           break;
         }
       }
     }
 
-    return matches;
-  }, [features, query]);
+    // Mix in top geocoded results
+    const geoCount = Math.min(rawPhotonResults.length, MAX_GEOCODED);
+    for (let i = 0; i < geoCount; i++) {
+        matches.push({ type: "geocoded", feature: rawPhotonResults[i], matchedOn: "Web" });
+    }
 
-  return { query, setQuery, results, isSearching, clearSearch };
+    return matches;
+  }, [features, query, rawPhotonResults]);
+
+  return { query, setQuery, results, isSearching: isSearching || isPhotonSearching, clearSearch };
 }

@@ -44,13 +44,13 @@ export default function LocateMeButton({ status, onLocate, onFlyToUser }: Locate
         aria-label={labelMap[status]}
         title={labelMap[status]}
         className={[
-          "w-10 h-10 flex items-center justify-center rounded-xl",
-          "border transition-all duration-200 shadow-lg",
+          "w-[48px] h-[48px] flex flex-shrink-0 items-center justify-center rounded-full mt-0.5",
+          "transition-all duration-300 shadow-[0_12px_40px_rgba(0,0,0,0.08)]",
           isGranted
-            ? "bg-blue-600 border-blue-500 text-white hover:bg-blue-700"
+            ? "bg-gray-900 text-white hover:bg-black"
             : isError
-            ? "bg-red-50 border-red-300 text-red-600 hover:bg-red-100"
-            : "bg-white/90 backdrop-blur-md border-gray-300/70 text-gray-700 hover:text-gray-900 hover:bg-white",
+            ? "bg-red-50 text-red-600 hover:bg-red-100"
+            : "bg-white text-gray-900 hover:bg-gray-50",
           isLoading && "cursor-not-allowed opacity-70",
         ].join(" ")}
       >
@@ -64,7 +64,7 @@ export default function LocateMeButton({ status, onLocate, onFlyToUser }: Locate
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
               d={isGranted
                 ? "M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                : "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                : "M12 2v20M2 12h20M12 5a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"
               }
             />
           </svg>

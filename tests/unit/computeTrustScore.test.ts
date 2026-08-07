@@ -2,20 +2,29 @@ import { describe, it, expect } from "vitest";
 import { computeTrustScore } from "@/features/coverage-reports/trust/computeTrustScore";
 import type { SpeedSample } from "@/features/coverage-reports/types";
 
-const inApp: SpeedSample = { source: "in_app", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
+const inApp: SpeedSample = { source: "mobile", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
 const manualLink: SpeedSample = { source: "manual", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: "https://www.speedtest.net/result/1" };
 const manualNoLink: SpeedSample = { source: "manual", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
+const wifiWithModel: SpeedSample = { source: "mobile", isWifi: true, wifiDeviceModel: "Router X", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
+const wifiNoModel: SpeedSample = { source: "desktop", isWifi: true, downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
 
 describe("computeTrustScore", () => {
   it("returns base 0.50 for a bare report with no speed and >100m accuracy", () => {
     expect(computeTrustScore({ speed: null, accuracyMeters: 500, isManualPin: false, ipRegionFar: false })).toBeCloseTo(0.5, 5);
   });
 
-  it("weights in-app and manual+link equally", () => {
+  it("weights fetched speeds and manual+link equally", () => {
     const a = computeTrustScore({ speed: inApp, accuracyMeters: 500, isManualPin: false, ipRegionFar: false });
     const b = computeTrustScore({ speed: manualLink, accuracyMeters: 500, isManualPin: false, ipRegionFar: false });
     expect(a).toBeCloseTo(b, 5);
     expect(a).toBeCloseTo(0.8, 5); // 50 + 30
+  });
+
+  it("penalizes wifi tests unless router model is provided", () => {
+    const withModel = computeTrustScore({ speed: wifiWithModel, accuracyMeters: 500, isManualPin: false, ipRegionFar: false });
+    const noModel = computeTrustScore({ speed: wifiNoModel, accuracyMeters: 500, isManualPin: false, ipRegionFar: false });
+    expect(withModel).toBeCloseTo(0.7, 5); // 50 + 20
+    expect(noModel).toBeCloseTo(0.6, 5); // 50 + 10
   });
 
   it("gives manual-without-link less than manual-with-link", () => {

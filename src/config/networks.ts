@@ -38,8 +38,8 @@ export const NETWORKS: Record<string, NetworkConfig> = {
   "Ufone / Onic": {
     id: "Ufone / Onic",
     label: "Ufone / Onic",
-    color: "#3B82F6",      // Blue
-    colorLight: "#60A5FA",
+    color: "#A855F7",      // Purple
+    colorLight: "#D8B4FE",
   },
   // Future operators: add an entry here, provide data file, run data:build
   // Telenor: {

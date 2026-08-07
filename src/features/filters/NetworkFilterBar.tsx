@@ -21,9 +21,7 @@ export default function NetworkFilterBar({
 }: NetworkFilterBarProps) {
   return (
     <div
-      role="group"
-      aria-label="Filter by network operator"
-      className="flex gap-2 flex-wrap"
+      className="flex gap-2 flex-nowrap"
     >
       {NETWORK_IDS.map((networkId) => {
         const config = NETWORKS[networkId];
@@ -38,28 +36,30 @@ export default function NetworkFilterBar({
             aria-label={`${isActive ? "Hide" : "Show"} ${config.label} sites (${count} sites)`}
             onClick={() => onToggleNetwork(networkId)}
             className={[
-              "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
-              "border transition-all duration-200 select-none",
+              "flex items-center gap-2 px-4 py-2 rounded-full text-[13px] tracking-wide whitespace-nowrap flex-shrink-0",
+              "transition-all duration-300 select-none shadow-sm",
               isActive
-                ? "border-transparent text-white shadow-sm"
-                : "border-gray-300 bg-white/90 backdrop-blur-md text-gray-600 hover:text-gray-900 hover:border-gray-400 shadow-sm",
+                ? "text-white font-bold scale-100 shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
+                : "bg-white text-gray-600 font-medium hover:bg-gray-50 scale-95 hover:scale-100 hover:text-gray-900 border border-gray-100",
             ].join(" ")}
             style={
               isActive
-                ? { backgroundColor: config.color, borderColor: config.color }
+                ? { backgroundColor: config.color }
                 : undefined
             }
           >
-            {/* Color dot */}
-            <span
-              className="w-2 h-2 rounded-full flex-shrink-0"
-              style={{ backgroundColor: isActive ? "rgba(0,0,0,0.3)" : config.color }}
-              aria-hidden
-            />
+            {/* Dot only exists when inactive, or we can just hide the dot completely when active to mimic pure pills */}
+            {!isActive && (
+              <span
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                style={{ backgroundColor: config.color }}
+                aria-hidden
+              />
+            )}
             {config.label}
             {count > 0 && (
               <span
-                className={`text-xs ${isActive ? "opacity-80" : "text-gray-400"}`}
+                className={`text-[11px] px-1.5 py-0.5 rounded-md ${isActive ? "bg-black/20 text-white font-bold" : "text-gray-400 font-medium"}`}
               >
                 {count}
               </span>

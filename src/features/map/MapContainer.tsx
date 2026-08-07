@@ -36,6 +36,7 @@ import type { CellSiteFeature, CellSiteFeatureCollection } from "@/types/cell-si
 import { MapProviderContext } from "./MapProviderContext";
 import { MapLibreProvider } from "./providers/MapLibreProvider";
 import { NETWORKS, UNKNOWN_OPERATOR_COLOR } from "@/config/networks";
+import { SITE_ICONS } from "./siteIcon";
 
 // Worker served from /public — see note above. Same-origin → loaded directly as
 // a module worker; the relative "./maplibre-gl-shared.mjs" import resolves fine.
@@ -65,8 +66,8 @@ const CARTO_LIGHT_RASTER_STYLE: StyleSpecification = {
       source: "carto-light",
       minzoom: 0,
       maxzoom: 19,
-    },
-  ],
+    }
+  ]
 };
 
 // Pakistan center
@@ -85,6 +86,7 @@ interface MapContainerProps {
   activeNetworks: Set<string>;
   userPosition: GeolocationPosition | null;
   onFeaturesLoaded: (features: CellSiteFeature[]) => void;
+  onMapReady?: (map: MapLibreMap) => void;
 }
 
 export default function MapContainer({
@@ -93,6 +95,7 @@ export default function MapContainer({
   activeNetworks,
   userPosition,
   onFeaturesLoaded,
+  onMapReady,
 }: MapContainerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -120,6 +123,8 @@ export default function MapContainer({
   routerRef.current = router;
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
+  const onMapReadyRef = useRef(onMapReady);
+  onMapReadyRef.current = onMapReady;
 
   // ── Initialize MapLibre + load data (decoupled) ───────────────────────────────
   useEffect(() => {
@@ -131,7 +136,7 @@ export default function MapContainer({
     // Adds the GeoJSON source + layers. Requires BOTH the style to be ready and
     // the data to be present; runs once (whichever precondition is satisfied
     // last triggers it). Safe to call repeatedly — it early-returns until ready.
-    const tryAddLayers = () => {
+    const tryAddLayers = async () => {
       const map = mapRef.current;
       const data = dataRef.current;
       if (!isMounted || layersAdded || !map || !data) return;
@@ -143,12 +148,35 @@ export default function MapContainer({
       map.off("styledata", handleStyleReady);
       map.off("idle", handleStyleReady);
 
-      // Build network color expression
-      const colorExpression: unknown[] = ["match", ["get", "provider"]];
-      for (const [networkId, config] of Object.entries(NETWORKS)) {
-        colorExpression.push(networkId, config.color);
-      }
-      colorExpression.push(UNKNOWN_OPERATOR_COLOR);
+      // 1) Preload distinct SVG icons for operators
+      const loadIcon = (id: string, url: string) => {
+        return new Promise<void>((resolve) => {
+          if (map.hasImage(id)) {
+            resolve();
+            return;
+          }
+          const img = new Image();
+          img.onload = () => {
+            if (!map.hasImage(id)) {
+              map.addImage(id, img);
+            }
+            resolve();
+          };
+          img.onerror = (err) => {
+            console.error(`Failed to load icon ${id}:`, err);
+            resolve();
+          };
+          img.src = url;
+        });
+      };
+
+      await Promise.all([
+        loadIcon("icon-Zong", SITE_ICONS.Zong),
+        loadIcon("icon-Jazz", SITE_ICONS.Jazz),
+        loadIcon("icon-Ufone", SITE_ICONS.Ufone),
+        loadIcon("icon-Unknown", SITE_ICONS.Unknown),
+      ]);
+      if (!isMounted) return;
 
       // Add source if not present
       if (!map.getSource(SOURCE_ID)) {
@@ -210,23 +238,27 @@ export default function MapContainer({
       if (!map.getLayer(LAYER_UNCLUSTERED)) {
         map.addLayer({
           id: LAYER_UNCLUSTERED,
-          type: "circle",
+          type: "symbol",
           source: SOURCE_ID,
           filter: ["!", ["has", "point_count"]],
-          paint: {
-            "circle-color": colorExpression as ExpressionSpecification,
-            "circle-radius": [
-              "interpolate", ["linear"], ["zoom"],
-              6, 4,
-              12, 7,
-              16, 11,
+          layout: {
+            "icon-image": [
+              "match",
+              ["get", "provider"],
+              "Zong", "icon-Zong",
+              "Jazz", "icon-Jazz",
+              "Ufone / Onic", "icon-Ufone",
+              "Ufone", "icon-Ufone",
+              "icon-Unknown"
             ],
-            "circle-stroke-width": 1.5,
-            "circle-stroke-color": "#FFFFFF",
-            "circle-opacity": 0.95,
+            "icon-size": 0.85,
+            "icon-allow-overlap": false,
+            "icon-anchor": "bottom",
           },
         });
       }
+
+      onMapReadyRef.current?.(map);
 
       // Cluster click → zoom in
       map.on("click", LAYER_CLUSTER, (e: MapMouseEvent) => {
@@ -409,11 +441,11 @@ export default function MapContainer({
     const map = mapRef.current;
     if (!map || !isMapReady) return;
     if (map.getLayer(LAYER_UNCLUSTERED)) {
-      map.setPaintProperty(LAYER_UNCLUSTERED, "circle-stroke-width", [
+      map.setLayoutProperty(LAYER_UNCLUSTERED, "icon-size", [
         "case",
         ["==", ["get", "site_uid"], selectedSiteId ?? ""],
-        3,
-        1.5,
+        1.15,
+        0.85,
       ]);
     }
   }, [selectedSiteId, isMapReady]);

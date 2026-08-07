@@ -11,20 +11,26 @@
  * - Nearby sites
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { CellSiteFeature } from "@/types/cell-site";
+import type { Map as MapLibreMap } from "maplibre-gl";
 import { useNetworkFilters } from "@/features/filters/useNetworkFilters";
 import { useGeolocation } from "@/features/geolocation/useGeolocation";
 import { useNearbySites } from "@/features/nearby-sites/useNearbySites";
-import { useSearch } from "@/features/search/useSearch";
+import { useSearch, type SearchResult } from "@/features/search/useSearch";
 import NetworkFilterBar from "@/features/filters/NetworkFilterBar";
 import SearchBar from "@/features/search/SearchBar";
 import LocateMeButton from "@/features/geolocation/LocateMeButton";
 import MapLegend from "@/features/map/MapLegend";
 import SiteDetailSheet from "@/features/cell-sites/SiteDetailSheet";
 import NearbySitesPanel from "@/features/nearby-sites/NearbySitesPanel";
+import ReportButton from "@/features/coverage-reports/components/ReportButton";
+import ReportSheet from "@/features/coverage-reports/components/ReportSheet";
+import HeatmapLegend, { type HeatmapMode } from "@/features/coverage-reports/map/HeatmapLegend";
+import { useCoverageCells } from "@/features/coverage-reports/hooks/useCoverageCells";
+import { useCoverageHeatmap } from "@/features/coverage-reports/map/useCoverageHeatmap";
 
 // Dynamic import: MapContainer is never SSR'd (MapLibre requires browser)
 const MapContainer = dynamic(() => import("@/features/map/MapContainer"), {
@@ -43,6 +49,11 @@ export default function MainMapView() {
   const [allFeatures, setAllFeatures] = useState<CellSiteFeature[]>([]);
   const [selectedSite, setSelectedSite] = useState<CellSiteFeature | null>(null);
   const [showNearby, setShowNearby] = useState(false);
+  const [coverageMap, setCoverageMap] = useState<MapLibreMap | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [heatmapMode, setHeatmapMode] = useState<HeatmapMode>("coverage");
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [heatmapVisible] = useState(true);
   const mapRef = useState<{ flyTo: (f: CellSiteFeature) => void } | null>(null);
 
   const searchParams = useSearchParams();
@@ -53,6 +64,25 @@ export default function MainMapView() {
   const geoState = useGeolocation();
   const { nearbySites, isAvailable: hasLocation } = useNearbySites(allFeatures, geoState, activeNetworks);
   const { query, setQuery, results, isSearching, clearSearch } = useSearch(allFeatures);
+  const { cells, refresh: refreshCells } = useCoverageCells(coverageMap, verifiedOnly);
+
+  // Auto-fetch location on initialization
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (geoState.status === "idle") {
+      geoState.requestLocation();
+    }
+  }, []);
+
+  const filterOp = useMemo(() => {
+    if (activeNetworks.size === 1) {
+      const val = Array.from(activeNetworks)[0];
+      if (["Jazz", "Zong", "Ufone"].includes(val)) return val as "Jazz" | "Zong" | "Ufone";
+    }
+    return undefined;
+  }, [activeNetworks]);
+
+  useCoverageHeatmap({ map: coverageMap, cells, mode: heatmapMode, visible: heatmapVisible, filterOp });
 
   // ── Site counts per network ───────────────────────────────────────────────────
   const siteCounts = useMemo(() => {
@@ -82,12 +112,22 @@ export default function MainMapView() {
     setAllFeatures(features);
   }, []);
 
-  const handleSearchResult = useCallback((feature: CellSiteFeature) => {
-    setSelectedSite(feature);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("site", feature.properties.site_uid);
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    // Map will fly to selected site from useEffect in MapContainer
+  const handleSearchResult = useCallback((result: SearchResult) => {
+    if (result.type === "cell-site") {
+      const feature = result.feature;
+      setSelectedSite(feature);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("site", feature.properties.site_uid);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    } else {
+      // It's a geocoded location
+      const coords = result.feature.geometry.coordinates; // [lon, lat]
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("lng", coords[0].toFixed(6));
+      params.set("lat", coords[1].toFixed(6));
+      params.set("zoom", "15");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
   }, [searchParams, router, pathname]);
 
   const handleLocate = useCallback(() => {
@@ -120,53 +160,54 @@ export default function MainMapView() {
           activeNetworks={activeNetworks}
           userPosition={geoState.position}
           onFeaturesLoaded={handleFeaturesLoaded}
+          onMapReady={setCoverageMap}
         />
       </div>
 
       {/* ── Top controls overlay ─────────────────────────────────────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-3 sm:p-4 safe-area-inset-top">
-        <div className="flex flex-col gap-2">
-          {/* Search bar + locate button row */}
-          <div className="flex gap-2 items-start">
-            <div className="flex-1">
-              <SearchBar
-                query={query}
-                onQueryChange={setQuery}
-                results={results}
-                isSearching={isSearching}
-                onSelectResult={handleSearchResult}
-                onClear={clearSearch}
-              />
-            </div>
+      <div className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-5 safe-area-inset-top pointer-events-none flex flex-col gap-3">
+        
+        {/* Row 1: Search + Locate */}
+        <div className="flex gap-3 items-center pointer-events-auto w-full max-w-full">
+          <div className="flex-1 min-w-0">
+            <SearchBar
+              query={query}
+              onQueryChange={setQuery}
+              results={results}
+              isSearching={isSearching}
+              onSelectResult={handleSearchResult}
+              onClear={clearSearch}
+            />
+          </div>
+          <div className="flex-shrink-0">
             <LocateMeButton
               status={geoState.status}
               onLocate={handleLocate}
               onFlyToUser={handleFlyToUser}
             />
           </div>
+        </div>
 
-          {/* Network filter bar */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+        {/* Row 2: Overflowing Filter Chips */}
+        <div className="w-full pointer-events-auto overflow-hidden">
+          <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
             <NetworkFilterBar
               activeNetworks={activeNetworks}
               onToggleNetwork={toggleNetwork}
               siteCounts={siteCounts}
             />
+            {allFeatures.length > 0 && (
+              <div className="px-4 py-2 rounded-full bg-white text-gray-500 text-[13px] font-medium shadow-[0_4px_14px_rgba(0,0,0,0.04)] whitespace-nowrap flex-shrink-0 ml-1 border border-gray-100">
+                {totalVisible.toLocaleString()} sites
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Stats bar (site count) ───────────────────────────────────────────── */}
-      {allFeatures.length > 0 && (
-        <div className="absolute top-32 sm:top-28 left-1/2 -translate-x-1/2 z-20">
-          <div className="px-3 py-1 bg-white/85 backdrop-blur-md border border-gray-300/60 rounded-full text-xs text-gray-600 shadow-sm">
-            {totalVisible.toLocaleString()} sites visible
-          </div>
-        </div>
-      )}
-
-      {/* ── Bottom-right controls ─────────────────────────────────────────────── */}
-      <div className="absolute bottom-8 right-3 sm:right-4 z-20 flex flex-col items-end gap-2 safe-area-inset-bottom">
+      {/* ── Bottom controls container ────────────────────────────────────────── */}
+      {/* 1. Layers & Legend controls (bottom right) */}
+      <div className="absolute bottom-[130px] sm:bottom-28 right-4 z-20 flex flex-col gap-3 items-end pointer-events-auto">
         {/* Nearby toggle (only when location is available) */}
         {hasLocation && (
           <button
@@ -191,8 +232,18 @@ export default function MainMapView() {
           </button>
         )}
 
-        {/* Legend */}
+        <HeatmapLegend
+          mode={heatmapMode}
+          verifiedOnly={verifiedOnly}
+          onToggleMode={setHeatmapMode}
+          onToggleVerified={() => setVerifiedOnly((value) => !value)}
+        />
         <MapLegend />
+      </div>
+
+      {/* 2. Floating Action Button (bottom center) */}
+      <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 safe-area-inset-bottom">
+        <ReportButton onClick={() => setReportOpen(true)} />
       </div>
 
       {/* ── Geolocation error message ─────────────────────────────────────────── */}
@@ -230,6 +281,12 @@ export default function MainMapView() {
           setShowNearby(false);
         }}
         onClose={() => setShowNearby(false)}
+      />
+
+      <ReportSheet
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+        onSubmitSuccess={refreshCells}
       />
     </div>
   );
