@@ -1,0 +1,42 @@
+{
+  "name": "pakistan-5g-map",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint src",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "data:validate": "npx tsx scripts/validate-sites.ts",
+    "data:build": "npx tsx scripts/build-sites.ts",
+    "format": "prettier --write src"
+  },
+  "dependencies": {
+    "maplibre-gl": "^6.2.0",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@tailwindcss/postcss": "^4",
+    "@types/geojson": "^7946.0.16",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "prettier": "^3.9.6",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.11",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  }
+}

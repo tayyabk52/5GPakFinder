@@ -1,0 +1,173 @@
+@import "tailwindcss";
+
+
+/* ── CSS Custom Properties ───────────────────────────────────────────── */
+:root {
+  --font-inter: "Inter", sans-serif;
+  --color-jazz: #FF6B35;
+  --color-zong: #00C5CD;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Full-height dynamic viewport for mobile */
+.h-dvh {
+  height: 100dvh;
+}
+
+/* ── MapLibre overrides ───────────────────────────────────────────────── */
+.maplibregl-canvas-container {
+  cursor: default;
+}
+
+.maplibregl-ctrl-bottom-left {
+  bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.maplibregl-ctrl-bottom-right {
+  bottom: env(safe-area-inset-bottom, 0px);
+  right: 0;
+}
+
+/* Style native MapLibre controls to match light theme */
+.maplibregl-ctrl-group {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(148, 163, 184, 0.5) !important;
+  border-radius: 12px !important;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+}
+
+.maplibregl-ctrl-group button {
+  color: #374151 !important;
+  background: transparent !important;
+  width: 40px !important;
+  height: 40px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3) !important;
+}
+
+.maplibregl-ctrl-group button:last-child {
+  border-bottom: none !important;
+}
+
+.maplibregl-ctrl-group button:hover {
+  color: #111827 !important;
+  background: rgba(226, 232, 240, 0.8) !important;
+}
+
+.maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(0) opacity(0.75);
+}
+
+.maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+  filter: invert(0) opacity(1);
+}
+
+.maplibregl-attrib-empty {
+  display: none;
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: #64748B !important;
+  font-size: 9px !important;
+  padding: 2px 6px !important;
+  border-radius: 6px !important;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: #475569 !important;
+}
+
+/* ── User location marker ─────────────────────────────────────────────── */
+.user-location-marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #2563EB;
+  border: 3px solid #FFFFFF;
+  box-shadow:
+    0 0 0 4px rgba(37, 99, 235, 0.25),
+    0 0 12px rgba(37, 99, 235, 0.4),
+    0 2px 8px rgba(15, 23, 42, 0.25);
+  animation: user-location-pulse 2.5s ease-out infinite;
+  cursor: default;
+}
+
+@keyframes user-location-pulse {
+  0% {
+    box-shadow:
+      0 0 0 4px rgba(37, 99, 235, 0.25),
+      0 0 12px rgba(37, 99, 235, 0.4),
+      0 2px 8px rgba(15, 23, 42, 0.25);
+  }
+  70% {
+    box-shadow:
+      0 0 0 14px rgba(37, 99, 235, 0),
+      0 0 18px rgba(37, 99, 235, 0.15),
+      0 2px 8px rgba(15, 23, 42, 0.25);
+  }
+  100% {
+    box-shadow:
+      0 0 0 4px rgba(37, 99, 235, 0.25),
+      0 0 12px rgba(37, 99, 235, 0.4),
+      0 2px 8px rgba(15, 23, 42, 0.25);
+  }
+}
+
+/* ── Animations ───────────────────────────────────────────────────────── */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ── Scrollbar hiding ─────────────────────────────────────────────────── */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Safe area padding utilities ──────────────────────────────────────── */
+.safe-area-inset-top {
+  padding-top: max(0.75rem, env(safe-area-inset-top));
+}
+
+.safe-area-inset-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+/* ── Focus visible ────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #3B82F6;
+  outline-offset: 2px;
+}
+
+button:focus-visible {
+  border-radius: 6px;
+}
