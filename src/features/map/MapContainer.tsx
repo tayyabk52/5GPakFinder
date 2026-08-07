@@ -483,7 +483,7 @@ export default function MapContainer({
       const maplibregl = await import("maplibre-gl");
 
       if (userPosition) {
-        const { latitude, longitude } = userPosition.coords;
+        const { latitude, longitude, accuracy } = userPosition.coords;
 
         if (userMarkerRef.current) {
           userMarkerRef.current.setLngLat([longitude, latitude]);
@@ -498,9 +498,49 @@ export default function MapContainer({
             .setLngLat([longitude, latitude])
             .addTo(map);
         }
+
+        // Draw dynamic accuracy circle
+        const circleGeoJSON = createGeoJSONCircle([longitude, latitude], accuracy || 20);
+        const source = map.getSource("user-accuracy-source") as any;
+        if (source) {
+          source.setData(circleGeoJSON);
+        } else {
+          map.addSource("user-accuracy-source", {
+            type: "geojson",
+            data: circleGeoJSON,
+          });
+
+          if (!map.getLayer("user-accuracy-fill")) {
+            map.addLayer({
+              id: "user-accuracy-fill",
+              type: "fill",
+              source: "user-accuracy-source",
+              paint: {
+                "fill-color": "#3b82f6",
+                "fill-opacity": 0.15,
+              },
+            });
+          }
+
+          if (!map.getLayer("user-accuracy-stroke")) {
+            map.addLayer({
+              id: "user-accuracy-stroke",
+              type: "line",
+              source: "user-accuracy-source",
+              paint: {
+                "line-color": "#2563eb",
+                "line-width": 1.5,
+                "line-dasharray": [2, 2],
+              },
+            });
+          }
+        }
       } else {
         userMarkerRef.current?.remove();
         userMarkerRef.current = null;
+        if (map.getLayer("user-accuracy-fill")) map.removeLayer("user-accuracy-fill");
+        if (map.getLayer("user-accuracy-stroke")) map.removeLayer("user-accuracy-stroke");
+        if (map.getSource("user-accuracy-source")) map.removeSource("user-accuracy-source");
       }
     };
 
@@ -539,4 +579,30 @@ export default function MapContainer({
       </div>
     </MapProviderContext.Provider>
   );
+}
+
+function createGeoJSONCircle(center: [number, number], radiusInMeters: number, points = 64) {
+  const latitude = center[1];
+  const longitude = center[0];
+  const km = Math.max(radiusInMeters, 5) / 1000;
+  const ret: [number, number][] = [];
+  const distanceX = km / (111.320 * Math.cos((latitude * Math.PI) / 180));
+  const distanceY = km / 110.574;
+
+  for (let i = 0; i < points; i++) {
+    const theta = (i / points) * (2 * Math.PI);
+    const x = distanceX * Math.cos(theta);
+    const y = distanceY * Math.sin(theta);
+    ret.push([longitude + x, latitude + y]);
+  }
+  ret.push(ret[0]);
+
+  return {
+    type: "Feature" as const,
+    geometry: {
+      type: "Polygon" as const,
+      coordinates: [ret]
+    },
+    properties: {}
+  };
 }

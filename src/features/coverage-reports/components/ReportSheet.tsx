@@ -28,12 +28,34 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
   const [speed, setSpeed] = useState<SpeedSample | null>(null);
   const [manualPin, setManualPin] = useState<{ lat: string; lng: string }>({ lat: "", lng: "" });
   const [useManualPin, setUseManualPin] = useState(false);
+  const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && geo.status === "idle") {
       geo.requestLocation();
     }
   }, [open, geo]);
+
+  useEffect(() => {
+    if (geo.position && !useManualPin) {
+      const lat = geo.position.coords.latitude;
+      const lng = geo.position.coords.longitude;
+      let active = true;
+      fetch(`https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (active && data.features && data.features.length > 0) {
+            const p = data.features[0].properties;
+            const parts = [p.name || p.street, p.city || p.district, p.state].filter(Boolean);
+            setResolvedAddress(parts.join(", ") || null);
+          }
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }
+  }, [geo.position, useManualPin]);
 
   const manualCoordinates = useMemo(() => {
     const latitude = parseFloat(manualPin.lat);
@@ -124,9 +146,38 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
               </div>
 
               {geo.position && !useManualPin ? (
-                <p className="text-xs text-gray-600">Located · accuracy ±{Math.round(geo.position.coords.accuracy)} m</p>
+                <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-900">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      Live GPS Position
+                    </span>
+                    <span
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                        (geo.accuracy ?? geo.position.coords.accuracy) <= 15
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      ±{geo.accuracy ?? Math.round(geo.position.coords.accuracy)}m accuracy
+                    </span>
+                  </div>
+                  {resolvedAddress && (
+                    <p className="text-xs text-gray-700 font-medium truncate">
+                      📍 {resolvedAddress}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-gray-500 font-mono">
+                    Lat: {geo.position.coords.latitude.toFixed(5)}, Lng: {geo.position.coords.longitude.toFixed(5)}
+                  </p>
+                </div>
               ) : manualCoordinates ? (
-                <p className="text-xs text-gray-600">Manual pin placed on the map.</p>
+                <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl">
+                  <p className="text-xs text-emerald-900 font-semibold mb-0.5">Custom Pin Selected</p>
+                  <p className="text-[11px] text-emerald-700 font-mono">
+                    Lat: {manualCoordinates.latitude.toFixed(5)}, Lng: {manualCoordinates.longitude.toFixed(5)}
+                  </p>
+                </div>
               ) : (
                 <button
                   onClick={() => geo.requestLocation()}
