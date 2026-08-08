@@ -1,7 +1,9 @@
 -- Coverage Insights aggregate API
 -- Run once in Supabase SQL Editor. It returns aggregates only; no raw locations or identifiers.
 
-drop function if exists public.get_coverage_insights();
+-- A default parameter does not make this a no-argument function in Postgres;
+-- drop the real text signature so this migration is safe to re-run.
+drop function if exists public.get_coverage_insights(text);
 
 create function public.get_coverage_insights(p_generation text default '5g')
 returns jsonb
