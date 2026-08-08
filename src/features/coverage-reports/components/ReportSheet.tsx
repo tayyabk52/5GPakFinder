@@ -127,6 +127,47 @@ export default function ReportSheet({
     onClose();
   };
 
+  const cancelPinAdjustment = () => {
+    if (geo.position) {
+      const { latitude, longitude } = geo.position.coords;
+      setManualPin({ lat: String(latitude), lng: String(longitude) });
+      setUseManualPin(false);
+    }
+    onStopPinAdjustment();
+  };
+
+  // Pin adjustment uses the full map. Keeping only this compact confirmation
+  // sheet visible is the familiar ride-hailing location-picker pattern.
+  if (adjustedPin) {
+    return (
+      <div className="fixed inset-0 z-40 pointer-events-none">
+        <div className="absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">
+          Drag the red pin to your exact location
+        </div>
+        <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] pointer-events-auto md:bottom-6 md:left-1/2 md:w-[400px] md:-translate-x-1/2 md:rounded-[28px]">
+          <p className="text-sm font-bold text-gray-900">Confirm report location</p>
+          <p className="mt-1 text-xs text-gray-500">You can move the pin up to 2 km from your detected location.</p>
+          <div className="mt-4 flex gap-3">
+            <button
+              type="button"
+              onClick={cancelPinAdjustment}
+              className="flex-1 rounded-full border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={onStopPinAdjustment}
+              className="flex-1 rounded-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-black"
+            >
+              Use this location
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-40">
       <div className="absolute inset-0 bg-black/10" onClick={handleClose} aria-hidden />
