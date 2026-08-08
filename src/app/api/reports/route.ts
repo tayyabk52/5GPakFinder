@@ -11,6 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const IP_REGION_FAR_KM = 300;
+const MAX_REPORT_BODY_BYTES = 16 * 1024;
 
 function clientIp(req: Request): string {
   const forwardedFor = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-forwarded-for");
@@ -33,6 +34,13 @@ function isIpRegionFar(req: Request, lat: number, lng: number): boolean {
 }
 
 export async function POST(req: Request) {
+  const length = Number(req.headers.get("content-length") ?? "0");
+  if (Number.isFinite(length) && length > MAX_REPORT_BODY_BYTES) {
+    return NextResponse.json({ ok: false, reason: "Report payload is too large." }, { status: 413 });
+  }
+  if (!req.headers.get("content-type")?.toLowerCase().includes("application/json")) {
+    return NextResponse.json({ ok: false, reason: "Expected a JSON report." }, { status: 415 });
+  }
   let raw: unknown;
 
   try {

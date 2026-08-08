@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const SPEEDTEST_RESULT_RE =
-  /^https?:\/\/(?:www\.)?speedtest\.net\/result\/(i\/)?(\d+)\/?$/i;
+  /^https:\/\/(?:www\.)?speedtest\.net\/result\/(i\/)?(\d+)\/?$/i;
 
 export const runtime = "nodejs";
 

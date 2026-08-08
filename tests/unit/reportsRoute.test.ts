@@ -76,6 +76,13 @@ describe("POST /api/reports", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects non-JSON and oversized report bodies", async () => {
+    const nonJson = new Request("http://localhost/api/reports", { method: "POST", body: "not-json" });
+    expect((await POST(nonJson)).status).toBe(415);
+    const oversized = new Request("http://localhost/api/reports", { method: "POST", headers: { "content-type": "application/json", "content-length": "20000" }, body: "{}" });
+    expect((await POST(oversized)).status).toBe(413);
+  });
+
   it("returns 429 when the repository reports rate-limited", async () => {
     (supabaseRepository.checkSubmissionGate as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce("rate_limited");
 

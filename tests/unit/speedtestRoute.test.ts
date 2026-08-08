@@ -17,7 +17,7 @@ describe("speedtest download", () => {
     const response = await GET(request);
 
     const buffer = await response.arrayBuffer();
-    expect(buffer.byteLength).toBeLessThanOrEqual(25 * 1024 * 1024);
+    expect(buffer.byteLength).toBeLessThanOrEqual(10 * 1024 * 1024);
   });
 });
 
@@ -33,5 +33,13 @@ describe("speedtest upload", () => {
 
     const json = await response.json();
     expect(json.bytes).toBe(2048);
+  });
+
+  it("rejects oversized upload payloads", async () => {
+    const request = new Request("http://localhost/api/speedtest/upload", {
+      method: "POST",
+      headers: { "content-length": String(11 * 1024 * 1024) },
+    });
+    expect((await POST(request)).status).toBe(413);
   });
 });
