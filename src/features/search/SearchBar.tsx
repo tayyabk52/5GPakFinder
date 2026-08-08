@@ -9,7 +9,6 @@ import { useRef, useEffect } from "react";
 import type { SearchResult } from "@/features/search/useSearch";
 import { getNetworkConfig } from "@/config/networks";
 import { deriveCityForSite } from "@/features/cell-sites/utils/siteUtils";
-import type { CellSiteFeature } from "@/types/cell-site";
 
 interface SearchBarProps {
   query: string;
@@ -44,9 +43,9 @@ export default function SearchBar({
 
   return (
     <div className="relative w-full" role="search" aria-label="Search 5G sites">
-      <div className="relative">
+      <div className="relative rounded-2xl bg-white shadow-[0_1px_3px_rgba(60,64,67,0.22),0_4px_12px_rgba(60,64,67,0.12)] transition-shadow focus-within:shadow-[0_2px_8px_rgba(60,64,67,0.24),0_8px_20px_rgba(60,64,67,0.16)]">
         <svg
-          className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900 pointer-events-none"
+          className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-500 pointer-events-none"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -62,16 +61,17 @@ export default function SearchBar({
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder="Search sites, cities, operators…"
           autoComplete="off"
+          role="combobox"
           aria-autocomplete="list"
           aria-controls="search-results"
           aria-expanded={isSearching && results.length > 0}
-          className="h-12 w-full pl-11 pr-11 bg-white rounded-full text-gray-900 text-[15px] placeholder:text-gray-500 font-medium border border-gray-200 shadow-[0_1px_3px_rgba(60,64,67,0.2),0_4px_8px_rgba(60,64,67,0.12)] focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] transition-colors"
+          className="h-[52px] w-full rounded-2xl bg-transparent pl-12 pr-12 text-[15px] font-medium text-gray-900 placeholder:text-gray-500 focus:outline-none"
         />
         {query && (
           <button
             onClick={onClear}
             aria-label="Clear search"
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition-colors"
+            className="map-pressable absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-gray-500 hover:bg-gray-100 hover:text-gray-900"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -86,7 +86,7 @@ export default function SearchBar({
           id="search-results"
           role="listbox"
           aria-label="Search results"
-          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-[0_8px_24px_rgba(60,64,67,0.18)] z-50 max-h-64 overflow-y-auto"
+          className="map-popover-enter absolute top-full left-0 right-0 z-50 mt-2 max-h-64 overflow-y-auto overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-[0_8px_24px_rgba(60,64,67,0.18)]"
         >
           {results.length === 0 ? (
             <div className="px-4 py-3 text-sm text-gray-400">

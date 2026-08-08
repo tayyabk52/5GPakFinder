@@ -122,6 +122,17 @@ export default function MainMapView() {
     sessionStorage.setItem("adjusted-map-location", JSON.stringify(location));
   }, []);
 
+  const startLocationAdjustment = useCallback(() => {
+    if (!activeLocation) return;
+    setReportPin({
+      latitude: activeLocation.latitude,
+      longitude: activeLocation.longitude,
+      originLatitude: activeLocation.latitude,
+      originLongitude: activeLocation.longitude,
+    });
+    setIsAdjustingLocation(true);
+  }, [activeLocation]);
+
   const filterOp = useMemo(() => {
     if (activeNetworks.size === 1) {
       const val = Array.from(activeNetworks)[0];
@@ -237,6 +248,19 @@ export default function MainMapView() {
               onFlyToUser={handleFlyToUser}
             />
           </div>
+          {activeLocation && (
+            <button
+              type="button"
+              onClick={startLocationAdjustment}
+              aria-label="Adjust current location"
+              title="Adjust current location"
+              className="map-pressable flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-gray-700 shadow-[0_1px_3px_rgba(60,64,67,0.2),0_4px_8px_rgba(60,64,67,0.12)] hover:bg-white hover:text-[#1a73e8]"
+            >
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2M3 12h2m14 0h2M8 16l8-8M8 8h.01M16 16h.01" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Row 2: Overflowing Filter Chips */}
