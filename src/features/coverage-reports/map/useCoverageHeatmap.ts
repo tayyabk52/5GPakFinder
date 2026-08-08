@@ -10,6 +10,8 @@ const SRC_POINTS = "coverage-points";
 const SRC_CELLS = "coverage-cells";
 const LYR_SURFACE = "coverage-surface";
 const LYR_EVIDENCE = "coverage-evidence";
+const OUTAGE_HALO_LAYER = "affected-area-signal-halo";
+const SITE_CLUSTER_LAYER = "clusters";
 
 interface UseCoverageHeatmapParams {
   map: MapLibreMap | null;
@@ -59,6 +61,11 @@ export function useCoverageHeatmap({ map, cells, mode, visible, filterOp }: UseC
       }
 
       if (!map.getLayer(LYR_SURFACE)) {
+        const before = map.getLayer(OUTAGE_HALO_LAYER)
+          ? OUTAGE_HALO_LAYER
+          : map.getLayer(SITE_CLUSTER_LAYER)
+            ? SITE_CLUSTER_LAYER
+            : undefined;
         map.addLayer({
           id: LYR_SURFACE,
           type: "fill",
@@ -74,10 +81,15 @@ export function useCoverageHeatmap({ map, cells, mode, visible, filterOp }: UseC
               10, 0.9
             ],
           },
-        });
+        }, before);
       }
 
       if (!map.getLayer(LYR_EVIDENCE)) {
+        const before = map.getLayer(OUTAGE_HALO_LAYER)
+          ? OUTAGE_HALO_LAYER
+          : map.getLayer(SITE_CLUSTER_LAYER)
+            ? SITE_CLUSTER_LAYER
+            : undefined;
         map.addLayer({
           id: LYR_EVIDENCE,
           type: "circle",
@@ -94,7 +106,7 @@ export function useCoverageHeatmap({ map, cells, mode, visible, filterOp }: UseC
             "circle-stroke-width": 1.5,
             "circle-stroke-color": "#ffffff",
           },
-        });
+        }, before);
       }
 
       const onEnter = (event: MapMouseEvent) => {
