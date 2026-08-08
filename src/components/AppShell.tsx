@@ -7,11 +7,11 @@ import { Activity, BarChart3, ChartNoAxesCombined, ChevronRight, House, Map, Men
 import { useState } from "react";
 
 const items = [
-  { href: "/", label: "Home", description: "Your network hub", icon: House },
-  { href: "/map", label: "Map", description: "Coverage and sites", icon: Map },
-  { href: "/network-status", label: "Network status", description: "Live community signals", icon: Activity },
-  { href: "/network-history", label: "History", description: "Past community trends", icon: BarChart3 },
-  { href: "/insights", label: "Insights", description: "Coverage and speeds", icon: ChartNoAxesCombined },
+  { href: "/", label: "Home", icon: House },
+  { href: "/map", label: "Map", icon: Map },
+  { href: "/network-status", label: "Network status", icon: Activity },
+  { href: "/network-history", label: "History", icon: BarChart3 },
+  { href: "/insights", label: "Insights", icon: ChartNoAxesCombined },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -33,14 +33,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const toggleSidebar = () => setCollapsed((value) => !value);
 
-  const navigation = (mobile = false) => <nav className={mobile ? "space-y-1" : "space-y-1.5"} aria-label="Primary navigation">
+  const navigation = (mobile = false) => <nav className={mobile ? "space-y-2" : "space-y-1.5"} aria-label="Primary navigation">
     {!collapsed && !mobile && <p className="mb-3 px-3 text-[10px] font-bold tracking-[.16em] text-slate-400">EXPLORE</p>}
-    {items.map(({ href, label, description, icon: Icon }) => {
+    {items.map(({ href, label, icon: Icon }) => {
       const selected = isActive(pathname, href);
       const compact = !mobile && collapsed;
-      return <Link key={href} href={href} onClick={mobile ? () => setOpen(false) : undefined} aria-current={selected ? "page" : undefined} title={compact ? label : undefined} className={`group relative flex min-h-11 items-center rounded-xl transition-[background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49cbeb] ${compact ? "justify-center px-2" : "gap-3 px-3"} ${selected ? "bg-slate-950 text-white shadow-[0_5px_13px_rgba(15,23,42,.14)]" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950 active:scale-[.98]"}`}>
+      return <Link key={href} href={href} onClick={mobile ? () => setOpen(false) : undefined} aria-current={selected ? "page" : undefined} title={compact ? label : undefined} className={`group relative flex min-h-11 items-center rounded-xl transition-[background-color,color,transform] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#49cbeb] ${compact ? "justify-center px-2" : mobile ? "min-h-[3.25rem] gap-3 rounded-2xl px-3.5" : "gap-3 px-3"} ${selected ? "bg-slate-950 text-white shadow-[0_5px_13px_rgba(15,23,42,.14)]" : "text-slate-500 hover:bg-slate-100 hover:text-slate-950 active:scale-[.98]"}`}>
         <Icon size={19} strokeWidth={selected ? 2.25 : 1.9} className="shrink-0" />
-        {!compact && <span className="min-w-0"><span className="block text-sm font-semibold tracking-[-.01em]">{label}</span>{mobile && <span className={`mt-0.5 block text-xs ${selected ? "text-slate-300" : "text-slate-400"}`}>{description}</span>}</span>}
+        {!compact && <span className="min-w-0"><span className="block text-sm font-semibold tracking-[-.01em]">{label}</span></span>}
         {selected && !compact && !mobile && <span aria-hidden className="ml-auto h-1.5 w-1.5 rounded-full bg-[#77e8bd]" />}
       </Link>;
     })}
@@ -63,7 +63,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     </aside>
 
-    {open && <div className="app-backdrop fixed inset-0 z-[80] bg-slate-950/35 lg:hidden" onClick={() => setOpen(false)}><aside role="dialog" aria-modal="true" aria-label="Navigation" className="app-drawer-enter flex h-full w-full flex-col bg-white px-5 pb-7 pt-[max(1.25rem,env(safe-area-inset-top))] shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><Brand /><button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-95"><X size={19} /></button></div><div className="mt-9 border-y border-slate-100 py-4">{navigation(true)}</div><div className="mt-auto rounded-2xl bg-[#f4f5f6] p-4"><p className="text-xs font-semibold text-slate-700">Private by design</p><p className="mt-1 text-xs leading-5 text-slate-500">Community reports are anonymous and shown only as aggregated area signals.</p></div></aside></div>}
+    {open && <div className="app-backdrop fixed inset-0 z-[80] bg-slate-950/35 lg:hidden" onClick={() => setOpen(false)}><aside role="dialog" aria-modal="true" aria-label="Navigation" className="app-drawer-enter flex h-full w-full flex-col bg-white px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><Brand /><button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-95"><X size={19} /></button></div><div className="mt-7 border-t border-slate-100 pt-5">{navigation(true)}</div><div className="mt-auto rounded-2xl bg-[#f4f5f6] p-5"><p className="text-xs font-semibold text-slate-700">Private by design</p><p className="mt-1 text-xs leading-5 text-slate-500">Community reports are anonymous and shown only as aggregated area signals.</p></div></aside></div>}
 
     <main className={`h-full pt-[4.25rem] transition-[padding] duration-300 ease-out lg:pt-0 ${sidebarWidth}`}><div key={pathname} className="app-page-enter h-full">{children}</div></main>
   </div>;
