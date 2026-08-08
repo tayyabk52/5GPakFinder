@@ -1,0 +1,5 @@
+import { NextResponse } from "next/server";
+import { supabaseOutageRepository } from "@/server/network-status/repository";
+import { precisionForZoom } from "@/features/coverage-reports/geohash/geohash";
+export const dynamic = "force-dynamic";
+export async function GET(req: Request) { const p = new URL(req.url).searchParams; const values = ["minLat", "minLng", "maxLat", "maxLng", "zoom"].map((k) => Number(p.get(k))); const [minLat, minLng, maxLat, maxLng, zoom] = values; if (!values.every(Number.isFinite) || minLat < 23 || maxLat > 37 || minLng < 60 || maxLng > 78 || minLat >= maxLat || minLng >= maxLng || zoom < 0 || zoom > 22) return NextResponse.json({ cells: [] }); const operator = p.get("operator"); if (operator && !["Jazz", "Zong", "Ufone"].includes(operator)) return NextResponse.json({ cells: [] }); try { return NextResponse.json({ cells: await supabaseOutageRepository.getAffectedCells({ minLat, minLng, maxLat, maxLng, precision: precisionForZoom(zoom), operator: operator ?? undefined }) }, { headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } }); } catch { return NextResponse.json({ cells: [] }, { status: 500 }); } }

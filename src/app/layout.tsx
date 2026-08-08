@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
+import AppShell from "@/components/AppShell";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -48,7 +49,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
       </head>
       <body className={`${inter.variable} font-sans antialiased bg-gray-50 text-gray-900`}>
-        {children}
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );

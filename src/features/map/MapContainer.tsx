@@ -422,6 +422,7 @@ export default function MapContainer({
       map.on("error", (e: MapLibreEvent & { error?: Error }) => {
         console.error("MapLibre event error:", e.error?.message ?? e);
       });
+
     };
 
     loadData();
@@ -505,7 +506,9 @@ export default function MapContainer({
       if (userPosition || reportPin || locationOverride) {
         const latitude = reportPin?.latitude ?? locationOverride?.latitude ?? userPosition!.coords.latitude;
         const longitude = reportPin?.longitude ?? locationOverride?.longitude ?? userPosition!.coords.longitude;
-        const accuracy = reportPin ? 20 : userPosition!.coords.accuracy;
+        // A saved/adjusted session location can exist before browser GPS has a
+        // reading. Do not dereference userPosition in that valid state.
+        const accuracy = reportPin || locationOverride ? 20 : userPosition?.coords.accuracy ?? 20;
 
         if (userMarkerRef.current) {
           userMarkerRef.current.setLngLat([longitude, latitude]);

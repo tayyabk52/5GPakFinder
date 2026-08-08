@@ -1,0 +1,13 @@
+"use client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import type { AffectedCell } from "@/features/network-status/types";
+const sourceId = "affected-areas", fillId = "affected-areas-fill", lineId = "affected-areas-line";
+export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, operator?: string) {
+  const [cells,setCells]=useState<AffectedCell[]>([]); const timer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const refresh=useCallback(async()=>{if(!map)return;const b=map.getBounds(); const q=new URLSearchParams({minLat:String(b.getSouth()),minLng:String(b.getWest()),maxLat:String(b.getNorth()),maxLng:String(b.getEast()),zoom:String(map.getZoom())}); if(operator)q.set("operator",operator); try { const r=await fetch(`/api/network-status/cells?${q}`); setCells((await r.json()).cells??[]); }catch{setCells([]);}},[map,operator]);
+  useEffect(()=>{if(!map)return;const sync=()=>{if(timer.current)clearTimeout(timer.current);timer.current=setTimeout(()=>void refresh(),250)};map.on("moveend",sync);void refresh();return()=>{map.off("moveend",sync);if(timer.current)clearTimeout(timer.current)}},[map,refresh]);
+  useEffect(()=>{if(!map)return;const add=()=>{if(!map.isStyleLoaded()){map.once("idle",add);return;} if(!map.getSource(sourceId))map.addSource(sourceId,{type:"geojson",data:{type:"FeatureCollection",features:[]}}); if(!map.getLayer(fillId))map.addLayer({id:fillId,type:"fill",source:sourceId,paint:{"fill-color":["get","color"],"fill-opacity":0.55}}); if(!map.getLayer(lineId))map.addLayer({id:lineId,type:"line",source:sourceId,paint:{"line-color":["get","color"],"line-width":2}});};add();return()=>{if(map.getLayer(lineId))map.removeLayer(lineId);if(map.getLayer(fillId))map.removeLayer(fillId);if(map.getSource(sourceId))map.removeSource(sourceId);};},[map]);
+  useEffect(()=>{if(!map)return;const features=cells.map(c=>({type:"Feature" as const,properties:{color:c.status==="high_agreement"?"#dc2626":c.status==="recovering"?"#0d9488":"#f59e0b",count:c.reportCount,confidence:c.confidence,status:c.status},geometry:{type:"Polygon" as const,coordinates:[[[c.centerLng-.02,c.centerLat-.02],[c.centerLng+.02,c.centerLat-.02],[c.centerLng+.02,c.centerLat+.02],[c.centerLng-.02,c.centerLat+.02],[c.centerLng-.02,c.centerLat-.02]]]}})); const src=map.getSource(sourceId) as GeoJSONSource|undefined;src?.setData({type:"FeatureCollection",features}); for(const id of [fillId,lineId])if(map.getLayer(id))map.setLayoutProperty(id,"visibility",visible?"visible":"none");},[map,cells,visible]);
+  return {cells,refresh};
+}

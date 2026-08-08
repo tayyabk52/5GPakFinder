@@ -32,6 +32,7 @@ import HeatmapLegend, { type HeatmapMode } from "@/features/coverage-reports/map
 import { useCoverageCells } from "@/features/coverage-reports/hooks/useCoverageCells";
 import { useCoverageHeatmap } from "@/features/coverage-reports/map/useCoverageHeatmap";
 import type { ReportPin } from "@/features/map/MapContainer";
+import { useAffectedAreas } from "@/features/network-status/map/useAffectedAreas";
 
 // Dynamic import: MapContainer is never SSR'd (MapLibre requires browser)
 const MapContainer = dynamic(() => import("@/features/map/MapContainer"), {
@@ -57,7 +58,8 @@ export default function MainMapView() {
   const [isAdjustingLocation, setIsAdjustingLocation] = useState(false);
   const [heatmapMode, setHeatmapMode] = useState<HeatmapMode>("coverage");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [heatmapVisible] = useState(true);
+  const [heatmapVisible, setHeatmapVisible] = useState(true);
+  const [affectedVisible, setAffectedVisible] = useState(true);
   const hasAutoCenteredOnLocation = useRef(false);
   const mapRef = useState<{ flyTo: (f: CellSiteFeature) => void } | null>(null);
 
@@ -96,6 +98,13 @@ export default function MainMapView() {
     }
   }, []);
 
+  // Make the map's normal location available to other session features, such
+  // as Network Status, without requiring a second picker flow.
+  useEffect(() => {
+    if (!gpsLocation || sessionLocation) return;
+    sessionStorage.setItem("adjusted-map-location", JSON.stringify(gpsLocation));
+  }, [gpsLocation, sessionLocation]);
+
   // Center only once when the initial GPS reading arrives. Location watchers can
   // refine coordinates afterwards, but should never pull the map away from where
   // the user is exploring.
@@ -133,6 +142,7 @@ export default function MainMapView() {
     setIsAdjustingLocation(true);
   }, [activeLocation]);
 
+
   const filterOp = useMemo(() => {
     if (activeNetworks.size === 1) {
       const val = Array.from(activeNetworks)[0];
@@ -142,6 +152,7 @@ export default function MainMapView() {
   }, [activeNetworks]);
 
   useCoverageHeatmap({ map: coverageMap, cells, mode: heatmapMode, visible: heatmapVisible, filterOp });
+  useAffectedAreas(coverageMap, affectedVisible, filterOp);
 
   // ── Site counts per network ───────────────────────────────────────────────────
   const siteCounts = useMemo(() => {
@@ -210,7 +221,7 @@ export default function MainMapView() {
   }, [allFeatures, activeNetworks]);
 
   return (
-    <div className="relative w-full h-dvh overflow-hidden bg-gray-50">
+    <div className="relative h-[calc(100dvh-4rem)] w-full overflow-hidden bg-gray-50 lg:h-dvh">
       {/* ── Full-screen map ─────────────────────────────────────────────────── */}
       <div className="absolute inset-0">
         <MapContainer
@@ -230,7 +241,7 @@ export default function MainMapView() {
       <div className="absolute top-0 left-0 right-0 z-20 p-3 sm:p-4 safe-area-inset-top pointer-events-none flex flex-col gap-2">
         
         {/* Row 1: Search + Locate */}
-        <div className="map-ui-enter flex gap-2 items-center pointer-events-auto w-full max-w-xl">
+        <div className="map-ui-enter relative z-30 flex gap-2 items-center pointer-events-auto w-full max-w-xl">
           <div className="flex-1 min-w-0">
             <SearchBar
               query={query}
@@ -264,7 +275,7 @@ export default function MainMapView() {
         </div>
 
         {/* Row 2: Overflowing Filter Chips */}
-        <div className="map-ui-enter-delay w-full pointer-events-auto overflow-hidden">
+        <div className="map-ui-enter-delay relative z-10 w-full pointer-events-auto overflow-hidden">
           <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
             <NetworkFilterBar
               activeNetworks={activeNetworks}
@@ -282,10 +293,10 @@ export default function MainMapView() {
 
       {isAdjustingLocation && reportPin && (
         <div className="fixed inset-0 z-30 pointer-events-none">
-          <div className="absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">Drag the red pin to correct your location</div>
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">Drag the red pin to set your location</div>
           <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] pointer-events-auto md:bottom-6 md:left-1/2 md:w-[400px] md:-translate-x-1/2 md:rounded-[28px]">
-            <p className="text-sm font-bold text-gray-900">Confirm current location</p>
-            <p className="mt-1 text-xs text-gray-500">Nearby sites and location-based features will use this point for this session.</p>
+            <p className="text-sm font-bold text-gray-900">Confirm selected location</p>
+            <p className="mt-1 text-xs text-gray-500">This point will be used for location-based features in this session.</p>
             <p className="mt-2 text-[11px] font-mono text-gray-500" aria-live="polite">Selected: {reportPin.latitude.toFixed(5)}, {reportPin.longitude.toFixed(5)}</p>
             <div className="mt-4 flex gap-3">
               <button type="button" onClick={() => { setReportPin(null); setIsAdjustingLocation(false); }} className="flex-1 rounded-full border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
@@ -298,6 +309,11 @@ export default function MainMapView() {
       {/* ── Bottom controls container ────────────────────────────────────────── */}
       {/* 1. Layers & Legend controls (bottom right) */}
       <div className="map-ui-enter-delay absolute bottom-[112px] sm:bottom-7 right-3 sm:right-4 z-20 flex flex-col gap-2 items-end pointer-events-auto">
+        <details className="rounded-xl border border-slate-200 bg-white/95 p-3 text-sm shadow-md backdrop-blur">
+          <summary className="cursor-pointer font-semibold text-slate-700">Layers</summary>
+          <label className="mt-3 flex items-center gap-2"><input type="checkbox" checked={heatmapVisible} onChange={(e) => setHeatmapVisible(e.target.checked)} /> Coverage</label>
+          <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={affectedVisible} onChange={(e) => setAffectedVisible(e.target.checked)} /> Affected areas</label>
+        </details>
         {/* Nearby toggle (only when location is available) */}
         {hasLocation && (
           <button

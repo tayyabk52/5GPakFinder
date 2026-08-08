@@ -1,0 +1,12 @@
+import { describe, expect, it, vi } from "vitest";
+import { OutageSubmissionSchema } from "@/features/network-status/schemas/outage.schema";
+import { incidentStatus, outageTrust } from "@/server/network-status/lifecycle";
+import { submitOutageReport } from "@/server/network-status/submitOutage";
+import type { OutageRepository } from "@/server/network-status/repository";
+const report = { latitude: 31.52, longitude: 74.35, accuracyMeters: 12, isManualPin: false, operator: "Jazz" as const, state: "affected" as const, issueType: "no_signal" as const, deviceFingerprint: "device-abcdef" };
+describe("network status rules", () => {
+  it("requires an issue only for affected reports", () => { expect(OutageSubmissionSchema.safeParse(report).success).toBe(true); expect(OutageSubmissionSchema.safeParse({ ...report, issueType: null }).success).toBe(false); expect(OutageSubmissionSchema.safeParse({ ...report, state: "working", issueType: null }).success).toBe(true); });
+  it("applies lifecycle thresholds", () => { expect(incidentStatus({ affectedDevices15: 3, cells15: 2, affectedDevices30: 3, cells30: 2, normalDevices: 0, affectedGrowth: 3, lastAffectedMinutesAgo: 4 })).toBe("possible"); expect(incidentStatus({ affectedDevices15: 8, cells15: 3, affectedDevices30: 8, cells30: 3, normalDevices: 0, affectedGrowth: 8, lastAffectedMinutesAgo: 4 })).toBe("high_agreement"); expect(incidentStatus({ affectedDevices15: 0, cells15: 0, affectedDevices30: 0, cells30: 0, normalDevices: 3, affectedGrowth: 0, lastAffectedMinutesAgo: 20 })).toBe("recovering"); expect(incidentStatus({ affectedDevices15: 0, cells15: 0, affectedDevices30: 0, cells30: 0, normalDevices: 0, affectedGrowth: 0, lastAffectedMinutesAgo: 90 })).toBe("resolved"); });
+  it("reduces trust for weak location evidence", () => { expect(outageTrust({ accuracyMeters: null, isManualPin: true, ipRegionFar: true })).toBeLessThan(outageTrust({ accuracyMeters: 10, isManualPin: false, ipRegionFar: false })); });
+  it("rejects duplicate local submissions before insert", async () => { const repo: OutageRepository = { checkOutageGate: vi.fn(async()=>"duplicate" as const), insertOutageReport: vi.fn(), getAffectedCells: vi.fn(async()=>[]), getSummaries: vi.fn(async()=>[]) }; const result = await submitOutageReport({ submission: report, ipHash: "ip", ipRegionFar: false, repository: repo }); expect(result.ok).toBe(false); expect(repo.insertOutageReport).not.toHaveBeenCalled(); });
+});
