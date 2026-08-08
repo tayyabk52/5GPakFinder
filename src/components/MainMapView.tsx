@@ -61,6 +61,7 @@ export default function MainMapView() {
   const [heatmapVisible, setHeatmapVisible] = useState(true);
   const [affectedVisible, setAffectedVisible] = useState(true);
   const hasAutoCenteredOnLocation = useRef(false);
+  const centerAfterLocate = useRef(false);
   const mapRef = useState<{ flyTo: (f: CellSiteFeature) => void } | null>(null);
 
   const searchParams = useSearchParams();
@@ -200,21 +201,32 @@ export default function MainMapView() {
     }
   }, [searchParams, router, pathname]);
 
-  const handleLocate = useCallback(() => {
-    geoState.requestLocation();
-  }, [geoState]);
+  const centerOnLocation = useCallback((location: ActiveLocation) => {
+    if (!coverageMap) return;
+    coverageMap.flyTo({
+      center: [location.longitude, location.latitude],
+      zoom: Math.max(coverageMap.getZoom(), 13),
+      speed: 1.25,
+      curve: 1.35,
+      essential: true,
+    });
+  }, [coverageMap]);
 
-  const handleFlyToUser = useCallback(() => {
+  const handleLocate = useCallback(() => {
     if (activeLocation) {
-      const { latitude, longitude } = activeLocation;
-      // We trigger via a side-channel: set a URL param that MapContainer watches
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("lat", latitude.toFixed(6));
-      params.set("lng", longitude.toFixed(6));
-      params.set("zoom", "13");
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      if (coverageMap) centerOnLocation(activeLocation);
+      else centerAfterLocate.current = true;
+      return;
     }
-  }, [activeLocation, searchParams, router, pathname]);
+    centerAfterLocate.current = true;
+    geoState.requestLocation();
+  }, [activeLocation, centerOnLocation, coverageMap, geoState]);
+
+  useEffect(() => {
+    if (!centerAfterLocate.current || !activeLocation || !coverageMap) return;
+    centerOnLocation(activeLocation);
+    centerAfterLocate.current = false;
+  }, [activeLocation, centerOnLocation, coverageMap]);
 
   const totalVisible = useMemo(() => {
     return allFeatures.filter((f) => activeNetworks.has(f.properties.provider)).length;
@@ -256,7 +268,7 @@ export default function MainMapView() {
             <LocateMeButton
               status={geoState.status}
               onLocate={handleLocate}
-              onFlyToUser={handleFlyToUser}
+              onFlyToUser={handleLocate}
             />
           </div>
           {activeLocation && (
