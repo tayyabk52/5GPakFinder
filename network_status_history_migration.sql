@@ -199,3 +199,6 @@ begin
   loop perform public.refresh_network_incident(v_incident.id); end loop;
 end;
 $$;
+
+-- Backfill any qualifying recent reports immediately after installing this migration.
+select public.reconcile_network_incidents();
