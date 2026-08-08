@@ -77,6 +77,18 @@ describe("POST /api/reports", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects a known foreign request even with forged Pakistan coordinates", async () => {
+    const request = new Request("http://localhost/api/reports", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-vercel-ip-country": "IN" },
+      body: JSON.stringify(body),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(403);
+    expect(supabaseRepository.insertReport).not.toHaveBeenCalled();
+  });
+
   it("rejects non-JSON and oversized report bodies", async () => {
     const nonJson = new Request("http://localhost/api/reports", { method: "POST", body: "not-json" });
     expect((await POST(nonJson)).status).toBe(415);

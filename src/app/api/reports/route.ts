@@ -6,6 +6,7 @@ import { hashIp } from "@/server/reports/ipHash";
 import { haversineDistanceKm } from "@/lib/haversine";
 import { precisionForZoom } from "@/features/coverage-reports/geohash/geohash";
 import { VERIFIED_ONLY_THRESHOLD, VISIBLE_TRUST_THRESHOLD } from "@/features/coverage-reports/trust/trustTiers";
+import { isKnownForeignRequest } from "@/server/geo/pakistan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -52,6 +53,9 @@ export async function POST(req: Request) {
   const parsed = ReportSubmissionSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ ok: false, reason: "Invalid report data." }, { status: 400 });
+  }
+  if (isKnownForeignRequest(req)) {
+    return NextResponse.json({ ok: false, reason: "Reports are available only from within Pakistan." }, { status: 403 });
   }
 
   const submission = parsed.data;
