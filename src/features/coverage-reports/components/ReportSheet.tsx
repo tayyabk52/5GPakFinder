@@ -7,7 +7,7 @@ import { useReportSubmission } from "@/features/coverage-reports/hooks/useReport
 import SpeedTestPanel from "@/features/coverage-reports/components/SpeedTestPanel";
 import SuccessCard from "@/features/coverage-reports/components/SuccessCard";
 import LocationSearchInput from "@/features/coverage-reports/components/LocationSearchInput";
-import type { OperatorId, ReportSubmission, SpeedSample } from "@/features/coverage-reports/types";
+import type { NetworkGeneration, OperatorId, ReportSubmission, SpeedSample } from "@/features/coverage-reports/types";
 import type { ReportPin } from "@/features/map/MapContainer";
 
 interface ReportSheetProps {
@@ -40,6 +40,7 @@ export default function ReportSheet({
   const submission = useReportSubmission();
 
   const [operator, setOperator] = useState<OperatorId | null>(null);
+  const [networkGeneration, setNetworkGeneration] = useState<NetworkGeneration>("5g");
   const [speed, setSpeed] = useState<SpeedSample | null>(null);
   const [manualPin, setManualPin] = useState<{ lat: string; lng: string }>({ lat: "", lng: "" });
   const [useManualPin, setUseManualPin] = useState(false);
@@ -113,6 +114,7 @@ export default function ReportSheet({
       accuracyMeters,
       isManualPin: Boolean(manualCoordinates || sessionLocation),
       operator: operator as OperatorId,
+      networkGeneration,
       speed,
       deviceFingerprint: fingerprint,
     };
@@ -126,6 +128,7 @@ export default function ReportSheet({
   const handleClose = () => {
     submission.reset();
     setOperator(null);
+    setNetworkGeneration("5g");
     setSpeed(null);
     setManualPin({ lat: "", lng: "" });
     setUseManualPin(false);
@@ -189,7 +192,7 @@ export default function ReportSheet({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Report 5G coverage"
+        aria-label="Report coverage and speed"
         className="map-sheet-enter absolute bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:w-[400px] rounded-t-[32px] md:rounded-[32px] bg-white shadow-[0_-10px_60px_rgba(0,0,0,0.15)] md:shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-h-[90vh] overflow-y-auto"
       >
         {submission.status === "success" && submission.result ? (
@@ -200,7 +203,7 @@ export default function ReportSheet({
           <div className="p-7">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <h2 className="text-gray-900 text-lg font-bold tracking-tight">Report 5G coverage</h2>
+                <h2 className="text-gray-900 text-lg font-bold tracking-tight">Report coverage & speed</h2>
                 <p className="text-xs text-gray-500 mt-0.5">No account needed — we check reports so fake ones do not fill the map.</p>
               </div>
               <button
@@ -362,6 +365,14 @@ export default function ReportSheet({
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="mb-5">
+              <span className="text-sm font-medium text-gray-800 block mb-1.5">Connection technology</span>
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1.5">
+                {(["5g", "4g"] as const).map((generation) => <button key={generation} type="button" onClick={() => setNetworkGeneration(generation)} aria-pressed={networkGeneration === generation} className={`min-h-11 rounded-lg px-3 text-sm font-bold transition ${networkGeneration === generation ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{generation === "5g" ? "5G" : "4G LTE"}</button>)}
+              </div>
+              <p className="mt-2 text-[11px] leading-4 text-gray-500">Choose the network shown on your phone. LTE reports are stored separately and never change 5G speed or coverage results.</p>
             </div>
 
             <div className="mb-5">

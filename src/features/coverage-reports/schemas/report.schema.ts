@@ -30,6 +30,7 @@ export const ReportSubmissionSchema = z.object({
   accuracyMeters: z.number().int().nonnegative().nullable(),
   isManualPin: z.boolean(),
   operator: z.enum(["Jazz", "Zong", "Ufone"]),
+  networkGeneration: z.enum(["4g", "5g"]),
   speed: speedSchema.nullable(),
   deviceFingerprint: z.string().min(6).max(128),
 }).strict();

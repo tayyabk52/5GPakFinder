@@ -1,5 +1,6 @@
 import type { CoverageCell, ReportSubmission, SubmitOk } from "@/features/coverage-reports/types";
 import { CoverageCellsResponseSchema } from "@/features/coverage-reports/schemas/report.schema";
+import type { NetworkGeneration } from "@/features/coverage-reports/types";
 
 export type SubmitResult = SubmitOk | { ok: false; reason: string };
 
@@ -29,6 +30,7 @@ export interface CellQueryInput {
   maxLng: number;
   zoom: number;
   verifiedOnly: boolean;
+  generation: NetworkGeneration;
 }
 
 export async function fetchCoverageCells(query: CellQueryInput): Promise<CoverageCell[]> {
@@ -39,6 +41,7 @@ export async function fetchCoverageCells(query: CellQueryInput): Promise<Coverag
     maxLng: String(query.maxLng),
     zoom: String(query.zoom),
     verified: String(query.verifiedOnly),
+    generation: query.generation,
   });
 
   try {

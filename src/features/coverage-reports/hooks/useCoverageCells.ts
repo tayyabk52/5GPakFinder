@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { CoverageCell } from "@/features/coverage-reports/types";
+import type { NetworkGeneration } from "@/features/coverage-reports/types";
 import { fetchCoverageCells } from "@/features/coverage-reports/api/reportsClient";
 
-export function useCoverageCells(map: MapLibreMap | null, verifiedOnly: boolean) {
+export function useCoverageCells(map: MapLibreMap | null, verifiedOnly: boolean, generation: NetworkGeneration) {
   const [cells, setCells] = useState<CoverageCell[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -23,10 +24,11 @@ export function useCoverageCells(map: MapLibreMap | null, verifiedOnly: boolean)
       maxLng: bounds.getEast(),
       zoom,
       verifiedOnly,
+      generation,
     });
 
     setCells(nextCells);
-  }, [map, verifiedOnly]);
+  }, [map, verifiedOnly, generation]);
 
   useEffect(() => {
     if (!map) {

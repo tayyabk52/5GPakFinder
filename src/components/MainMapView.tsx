@@ -33,6 +33,7 @@ import { useCoverageCells } from "@/features/coverage-reports/hooks/useCoverageC
 import { useCoverageHeatmap } from "@/features/coverage-reports/map/useCoverageHeatmap";
 import type { ReportPin } from "@/features/map/MapContainer";
 import { useAffectedAreas } from "@/features/network-status/map/useAffectedAreas";
+import type { NetworkGeneration } from "@/features/coverage-reports/types";
 
 // Dynamic import: MapContainer is never SSR'd (MapLibre requires browser)
 const MapContainer = dynamic(() => import("@/features/map/MapContainer"), {
@@ -60,6 +61,7 @@ export default function MainMapView() {
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [heatmapVisible, setHeatmapVisible] = useState(true);
   const [affectedVisible, setAffectedVisible] = useState(true);
+  const [coverageGeneration, setCoverageGeneration] = useState<NetworkGeneration>("5g");
   const hasAutoCenteredOnLocation = useRef(false);
   const centerAfterLocate = useRef(false);
   const mapRef = useState<{ flyTo: (f: CellSiteFeature) => void } | null>(null);
@@ -76,7 +78,7 @@ export default function MainMapView() {
   const activeLocation = sessionLocation ?? gpsLocation;
   const { nearbySites, isAvailable: hasLocation } = useNearbySites(allFeatures, activeLocation, activeNetworks);
   const { query, setQuery, results, isSearching, clearSearch } = useSearch(allFeatures);
-  const { cells, refresh: refreshCells } = useCoverageCells(coverageMap, verifiedOnly);
+  const { cells, refresh: refreshCells } = useCoverageCells(coverageMap, verifiedOnly, coverageGeneration);
 
   // Auto-fetch location on initialization
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -325,6 +327,7 @@ export default function MainMapView() {
           <summary className="cursor-pointer font-semibold text-slate-700">Layers</summary>
           <label className="mt-3 flex items-center gap-2"><input type="checkbox" checked={heatmapVisible} onChange={(e) => setHeatmapVisible(e.target.checked)} /> Coverage</label>
           <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={affectedVisible} onChange={(e) => setAffectedVisible(e.target.checked)} /> Affected areas</label>
+          <label className="mt-3 block text-xs font-semibold text-slate-600">Coverage technology<select aria-label="Coverage technology" value={coverageGeneration} onChange={(event) => setCoverageGeneration(event.target.value as NetworkGeneration)} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-800"><option value="5g">5G coverage & speeds</option><option value="4g">4G LTE coverage & speeds</option></select></label>
         </details>
         {/* Nearby toggle (only when location is available) */}
         {hasLocation && (

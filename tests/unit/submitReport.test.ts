@@ -18,6 +18,7 @@ const submission: ReportSubmission = {
   accuracyMeters: 10,
   isManualPin: false,
   operator: "Jazz",
+  networkGeneration: "5g",
   speed: {
     source: "mobile",
     downloadMbps: 120,
@@ -44,6 +45,7 @@ describe("submitReport", () => {
     expect(row.ip_hash).toBe("iphash");
     expect(row.trust_score).toBeCloseTo(1, 5);
     expect(row.speed_source).toBe("mobile");
+    expect(row.network_generation).toBe("5g");
   });
 
   it("does not insert and returns a reason when rate limited", async () => {

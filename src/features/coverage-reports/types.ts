@@ -1,5 +1,6 @@
 export type SpeedSource = "desktop" | "mobile" | "manual";
 export type OperatorId = "Jazz" | "Zong" | "Ufone";
+export type NetworkGeneration = "4g" | "5g";
 
 export interface SpeedSample {
   source: SpeedSource;
@@ -21,6 +22,7 @@ export interface ReportSubmission {
   accuracyMeters: number | null;
   isManualPin: boolean;
   operator: OperatorId;
+  networkGeneration: NetworkGeneration;
   speed: SpeedSample | null;
   deviceFingerprint: string;
 }

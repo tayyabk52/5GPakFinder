@@ -43,6 +43,7 @@ export async function submitReport(
     accuracy_meters: submission.accuracyMeters,
     is_manual_pin: submission.isManualPin,
     operator: submission.operator,
+    network_generation: submission.networkGeneration,
     speed_source: submission.speed?.source ?? null,
     download_mbps: submission.speed?.downloadMbps ?? null,
     upload_mbps: submission.speed?.uploadMbps ?? null,

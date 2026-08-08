@@ -10,6 +10,7 @@ export interface ReportRow {
   accuracy_meters: number | null;
   is_manual_pin: boolean;
   operator: "Jazz" | "Zong" | "Ufone";
+  network_generation: "4g" | "5g";
   speed_source: "desktop" | "mobile" | "manual" | null;
   download_mbps: number | null;
   upload_mbps: number | null;
@@ -34,6 +35,7 @@ export interface CoverageCellQuery {
   precision: number;
   minTrust: number;
   verifiedOnly: boolean;
+  generation: "4g" | "5g";
 }
 
 export interface Repository {
@@ -82,6 +84,7 @@ export const supabaseRepository: Repository = {
       p_precision: query.precision,
       p_min_trust: query.minTrust,
       p_verified_only: query.verifiedOnly,
+      p_generation: query.generation,
     });
 
     if (error) {

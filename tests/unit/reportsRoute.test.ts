@@ -36,6 +36,7 @@ const body = {
   accuracyMeters: 10,
   isManualPin: false,
   operator: "Jazz",
+  networkGeneration: "5g",
   speed: null,
   deviceFingerprint: "abc123def456",
 };

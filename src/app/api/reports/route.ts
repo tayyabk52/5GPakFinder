@@ -100,6 +100,7 @@ export async function GET(req: Request) {
   }
 
   const verifiedOnly = url.searchParams.get("verified") === "true";
+  const generation = url.searchParams.get("generation") === "4g" ? "4g" : "5g";
 
   try {
     const cells = await supabaseRepository.getCoverageCells({
@@ -110,6 +111,7 @@ export async function GET(req: Request) {
       precision: precisionForZoom(zoom),
       minTrust: verifiedOnly ? VERIFIED_ONLY_THRESHOLD : VISIBLE_TRUST_THRESHOLD,
       verifiedOnly,
+      generation,
     });
 
     return NextResponse.json({ cells }, { status: 200, headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } });

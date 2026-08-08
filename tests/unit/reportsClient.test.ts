@@ -8,6 +8,7 @@ const body: ReportSubmission = {
   accuracyMeters: 10,
   isManualPin: false,
   operator: "Jazz",
+  networkGeneration: "5g",
   speed: null,
   deviceFingerprint: "abc123def456",
 };
@@ -76,7 +77,7 @@ describe("reportsClient.fetchCoverageCells", () => {
       )
     );
 
-    const cells = await fetchCoverageCells({ minLat: 30, minLng: 73, maxLat: 32, maxLng: 75, zoom: 12, verifiedOnly: false });
+    const cells = await fetchCoverageCells({ minLat: 30, minLng: 73, maxLat: 32, maxLng: 75, zoom: 12, verifiedOnly: false, generation: "5g" });
     expect(cells).toHaveLength(1);
     expect(cells[0].geohashPrefix).toBe("tuvz");
   });
@@ -84,7 +85,7 @@ describe("reportsClient.fetchCoverageCells", () => {
   it("returns [] on a non-ok response", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
 
-    const cells = await fetchCoverageCells({ minLat: 30, minLng: 73, maxLat: 32, maxLng: 75, zoom: 12, verifiedOnly: false });
+    const cells = await fetchCoverageCells({ minLat: 30, minLng: 73, maxLat: 32, maxLng: 75, zoom: 12, verifiedOnly: false, generation: "5g" });
     expect(cells).toEqual([]);
   });
 });

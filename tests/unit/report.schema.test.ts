@@ -7,6 +7,7 @@ const base = {
   accuracyMeters: 20,
   isManualPin: false,
   operator: "Jazz",
+  networkGeneration: "5g",
   speed: null,
   deviceFingerprint: "abc123def456",
 };
@@ -36,5 +37,10 @@ describe("ReportSubmissionSchema", () => {
 
   it("rejects a null operator", () => {
     expect(() => ReportSubmissionSchema.parse({ ...base, operator: null })).toThrow();
+  });
+
+  it("requires an explicit 4G LTE or 5G selection", () => {
+    expect(ReportSubmissionSchema.parse({ ...base, networkGeneration: "4g" }).networkGeneration).toBe("4g");
+    expect(() => ReportSubmissionSchema.parse({ ...base, networkGeneration: "3g" })).toThrow();
   });
 });

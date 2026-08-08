@@ -1,13 +1,15 @@
 -- Coverage Insights aggregate API
 -- Run once in Supabase SQL Editor. It returns aggregates only; no raw locations or identifiers.
 
-create or replace function public.get_coverage_insights()
+drop function if exists public.get_coverage_insights();
+
+create function public.get_coverage_insights(p_generation text default '5g')
 returns jsonb
 language sql
 stable
 as $$
   with visible_reports as (
-    select * from public.reports where status = 'visible' and trust_score >= .45
+    select * from public.reports where status = 'visible' and trust_score >= .45 and network_generation = p_generation
   ),
   city_bounds(name, min_lat, max_lat, min_lng, max_lng) as (
     values
