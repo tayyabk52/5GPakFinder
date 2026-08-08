@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, ChevronLeft, ChevronRight, House, Map, Menu, X } from "lucide-react";
+import { Activity, BarChart3, ChartNoAxesCombined, ChevronLeft, ChevronRight, House, Map, Menu, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const items = [
@@ -10,6 +10,7 @@ const items = [
   { href: "/map", label: "Map", description: "Coverage & sites", icon: Map },
   { href: "/network-status", label: "Network status", description: "Community signals", icon: Activity },
   { href: "/network-history", label: "History", description: "Past trends", icon: BarChart3 },
+  { href: "/insights", label: "Insights", description: "Coverage & speeds", icon: ChartNoAxesCombined },
 ];
 
 function isActive(pathname: string, href: string) { return href === "/" ? pathname === "/" : pathname.startsWith(href); }
