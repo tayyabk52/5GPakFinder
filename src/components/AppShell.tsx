@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, Bug, ChartNoAxesCombined, ChevronRight, House, Lightbulb, Map, Menu, PanelLeftClose, X } from "lucide-react";
+import { Activity, BarChart3, Bug, ChartNoAxesCombined, ChevronRight, House, Lightbulb, Map, Menu, PanelLeftClose, ScrollText, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 
 const items = [
@@ -27,6 +27,11 @@ function Brand({ collapsed = false, compact = false }: { collapsed?: boolean; co
     </span>
     {!collapsed && <span className="min-w-0 whitespace-nowrap"><span className="block text-[15px] font-bold tracking-[-.03em] text-slate-950">5GPak</span><span className="mt-0.5 block text-[10px] font-medium tracking-[.08em] text-slate-400">NETWORK COMPANION</span></span>}
   </Link>;
+}
+
+function LegalLinks({ collapsed = false }: { collapsed?: boolean }) {
+  if (collapsed) return <div className="mt-3 flex flex-col items-center gap-1 border-t border-slate-100 pt-3"><Link href="/privacy" title="Privacy Policy" className="grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"><ShieldCheck size={17}/></Link><Link href="/terms" title="Terms of Use" className="grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"><ScrollText size={17}/></Link></div>;
+  return <div className="mt-3 flex items-center gap-3 text-xs font-semibold text-slate-500"><Link href="/privacy" className="transition hover:text-slate-950">Privacy</Link><Link href="/terms" className="transition hover:text-slate-950">Terms</Link></div>;
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -61,11 +66,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {collapsed && <button type="button" onClick={toggleSidebar} aria-label="Expand sidebar" title="Expand sidebar" className="mx-auto mt-5 grid h-9 w-9 place-items-center rounded-xl border border-slate-200 text-slate-400 transition hover:bg-slate-100 hover:text-slate-950"><ChevronRight size={18} /></button>}
       <div className="mt-9">{navigation()}</div>
       <div className={`mt-auto border-t border-slate-100 pt-4 ${collapsed ? "text-center" : "px-2"}`}>
-        {!collapsed ? <><p className="text-xs font-medium leading-5 text-slate-500">Community data, kept anonymous.</p><Link href="/network-status" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-900 transition hover:text-slate-600">Network status <ChevronRight size={14} /></Link></> : <Link href="/network-status" title="Network status" className="mx-auto grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"><Activity size={18} /></Link>}
+        {!collapsed ? <><p className="text-xs font-medium leading-5 text-slate-500">Community data, kept anonymous.</p><Link href="/network-status" className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-900 transition hover:text-slate-600">Network status <ChevronRight size={14} /></Link><LegalLinks /></> : <><Link href="/network-status" title="Network status" className="mx-auto grid h-9 w-9 place-items-center rounded-xl text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"><Activity size={18} /></Link><LegalLinks collapsed /></>}
       </div>
     </aside>
 
-    {open && <div className="app-backdrop fixed inset-0 z-[80] bg-slate-950/35 lg:hidden" onClick={() => setOpen(false)}><aside role="dialog" aria-modal="true" aria-label="Navigation" className="app-drawer-enter flex h-full w-full flex-col bg-white px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><Brand /><button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-95"><X size={19} /></button></div><div className="mt-7 border-t border-slate-100 pt-5">{navigation(true)}</div><div className="mt-auto rounded-2xl bg-[#f4f5f6] p-5"><p className="text-xs font-semibold text-slate-700">Private by design</p><p className="mt-1 text-xs leading-5 text-slate-500">Community reports are anonymous and shown only as aggregated area signals.</p></div></aside></div>}
+    {open && <div className="app-backdrop fixed inset-0 z-[80] bg-slate-950/35 lg:hidden" onClick={() => setOpen(false)}><aside role="dialog" aria-modal="true" aria-label="Navigation" className="app-drawer-enter flex h-full w-full flex-col bg-white px-5 pb-[max(1.75rem,env(safe-area-inset-bottom))] pt-[max(1.25rem,env(safe-area-inset-top))] shadow-2xl" onClick={(event) => event.stopPropagation()}><div className="flex items-center justify-between"><Brand /><button type="button" aria-label="Close navigation" onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 active:scale-95"><X size={19} /></button></div><div className="mt-7 border-t border-slate-100 pt-5">{navigation(true)}</div><div className="mt-auto rounded-2xl bg-[#f4f5f6] p-5"><p className="text-xs font-semibold text-slate-700">Private by design</p><p className="mt-1 text-xs leading-5 text-slate-500">Community reports are anonymous and shown only as aggregated area signals.</p><LegalLinks /></div></aside></div>}
 
     <main className={`h-full pt-[4.25rem] transition-[padding] duration-300 ease-out lg:pt-0 ${sidebarWidth}`}><div key={pathname} className="app-page-enter h-full">{children}</div></main>
   </div>;
