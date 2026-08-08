@@ -24,7 +24,8 @@ as $$
       avg(r.download_mbps)::real as avg_download,
       avg(r.upload_mbps)::real as avg_upload,
       avg(r.ping_ms)::real as avg_ping,
-      avg(r.trust_score)::real as avg_trust
+      avg(r.trust_score)::real as avg_trust,
+      max(r.created_at) as last_report_at
     from city_bounds c left join visible_reports r
       on r.latitude between c.min_lat and c.max_lat and r.longitude between c.min_lng and c.max_lng
     group by c.name
@@ -46,6 +47,6 @@ as $$
     'averageTrust', (select avg(trust_score)::real from visible_reports),
     'lastReportAt', (select max(created_at) from visible_reports),
     'operators', coalesce((select jsonb_agg(jsonb_build_object('operator', operator, 'reportCount', report_count, 'speedSampleCount', speed_sample_count, 'averageDownload', avg_download, 'averageUpload', avg_upload, 'averagePing', avg_ping) order by operator) from operator_stats), '[]'::jsonb),
-    'cities', coalesce((select jsonb_agg(jsonb_build_object('city', name, 'reportCount', report_count, 'speedSampleCount', speed_sample_count, 'averageDownload', avg_download, 'averageUpload', avg_upload, 'averagePing', avg_ping, 'averageTrust', avg_trust) order by report_count desc, name) from city_stats), '[]'::jsonb)
+    'cities', coalesce((select jsonb_agg(jsonb_build_object('city', name, 'reportCount', report_count, 'speedSampleCount', speed_sample_count, 'averageDownload', avg_download, 'averageUpload', avg_upload, 'averagePing', avg_ping, 'averageTrust', avg_trust, 'lastReportAt', last_report_at) order by report_count desc, name) from city_stats), '[]'::jsonb)
   );
 $$;
