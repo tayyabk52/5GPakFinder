@@ -36,11 +36,11 @@ export default function NetworkFilterBar({
             aria-label={`${isActive ? "Hide" : "Show"} ${config.label} sites (${count} sites)`}
             onClick={() => onToggleNetwork(networkId)}
             className={[
-              "flex items-center gap-2 px-4 py-2 rounded-full text-[13px] tracking-wide whitespace-nowrap flex-shrink-0",
-              "transition-all duration-300 select-none shadow-sm",
+              "flex h-10 items-center gap-2 px-3.5 rounded-full text-[13px] whitespace-nowrap flex-shrink-0",
+              "transition-colors duration-150 select-none border shadow-sm",
               isActive
-                ? "text-white font-bold scale-100 shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
-                : "bg-white text-gray-600 font-medium hover:bg-gray-50 scale-95 hover:scale-100 hover:text-gray-900 border border-gray-100",
+                ? "text-white font-semibold border-transparent shadow-md"
+                : "bg-white/95 text-gray-700 font-medium hover:bg-white hover:text-gray-900 border-gray-200",
             ].join(" ")}
             style={
               isActive
@@ -48,18 +48,15 @@ export default function NetworkFilterBar({
                 : undefined
             }
           >
-            {/* Dot only exists when inactive, or we can just hide the dot completely when active to mimic pure pills */}
-            {!isActive && (
-              <span
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: config.color }}
-                aria-hidden
-              />
-            )}
+            <span
+              className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive ? "bg-white" : ""}`}
+              style={isActive ? undefined : { backgroundColor: config.color }}
+              aria-hidden
+            />
             {config.label}
             {count > 0 && (
               <span
-                className={`text-[11px] px-1.5 py-0.5 rounded-md ${isActive ? "bg-black/20 text-white font-bold" : "text-gray-400 font-medium"}`}
+                className={`text-[11px] ${isActive ? "text-white/85 font-medium" : "text-gray-400 font-medium"}`}
               >
                 {count}
               </span>

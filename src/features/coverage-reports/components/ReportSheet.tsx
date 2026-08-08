@@ -149,10 +149,10 @@ export default function ReportSheet({
   if (adjustedPin) {
     return (
       <div className="fixed inset-0 z-40 pointer-events-none">
-        <div className="absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">
+        <div className="map-ui-enter absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">
           Drag the red pin to your exact location
         </div>
-        <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] pointer-events-auto md:bottom-6 md:left-1/2 md:w-[400px] md:-translate-x-1/2 md:rounded-[28px]">
+        <div className="map-sheet-enter absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] pointer-events-auto md:bottom-6 md:left-1/2 md:w-[400px] md:-translate-x-1/2 md:rounded-[28px]">
           <p className="text-sm font-bold text-gray-900">Confirm report location</p>
           <p className="mt-1 text-xs text-gray-500">The blue location marker and report coordinates update as you move the red pin.</p>
           <p className="mt-2 text-[11px] font-mono text-gray-500" aria-live="polite">
@@ -185,12 +185,12 @@ export default function ReportSheet({
 
   return (
     <div className="fixed inset-0 z-40">
-      <div className="absolute inset-0 bg-black/10" onClick={handleClose} aria-hidden />
+      <div className="map-backdrop-enter absolute inset-0 bg-black/10" onClick={handleClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Report 5G coverage"
-        className="absolute bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:w-[400px] rounded-t-[32px] md:rounded-[32px] bg-white shadow-[0_-10px_60px_rgba(0,0,0,0.15)] md:shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-h-[90vh] overflow-y-auto"
+        className="map-sheet-enter absolute bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:w-[400px] rounded-t-[32px] md:rounded-[32px] bg-white shadow-[0_-10px_60px_rgba(0,0,0,0.15)] md:shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-h-[90vh] overflow-y-auto"
       >
         {submission.status === "success" && submission.result ? (
           <div className="p-6">

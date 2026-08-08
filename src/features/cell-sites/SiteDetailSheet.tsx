@@ -68,7 +68,7 @@ export default function SiteDetailSheet({ feature, onClose, onCenterOnMap }: Sit
     <>
       {/* Mobile backdrop */}
       <div
-        className="fixed inset-0 bg-black/10 z-30 md:hidden"
+        className="map-backdrop-enter fixed inset-0 bg-black/10 z-30 md:hidden"
         onClick={onClose}
         aria-hidden="true"
       />

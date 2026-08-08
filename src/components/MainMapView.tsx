@@ -11,7 +11,7 @@
  * - Nearby sites
  */
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import type { CellSiteFeature } from "@/types/cell-site";
@@ -58,6 +58,7 @@ export default function MainMapView() {
   const [heatmapMode, setHeatmapMode] = useState<HeatmapMode>("coverage");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [heatmapVisible] = useState(true);
+  const hasAutoCenteredOnLocation = useRef(false);
   const mapRef = useState<{ flyTo: (f: CellSiteFeature) => void } | null>(null);
 
   const searchParams = useSearchParams();
@@ -95,22 +96,31 @@ export default function MainMapView() {
     }
   }, []);
 
+  // Center only once when the initial GPS reading arrives. Location watchers can
+  // refine coordinates afterwards, but should never pull the map away from where
+  // the user is exploring.
+  useEffect(() => {
+    if (!gpsLocation || sessionLocation || hasAutoCenteredOnLocation.current) return;
+
+    const hasExplicitMapTarget = searchParams.has("site") || (searchParams.has("lat") && searchParams.has("lng"));
+    if (hasExplicitMapTarget) {
+      hasAutoCenteredOnLocation.current = true;
+      return;
+    }
+
+    hasAutoCenteredOnLocation.current = true;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("lat", gpsLocation.latitude.toFixed(6));
+    params.set("lng", gpsLocation.longitude.toFixed(6));
+    params.set("zoom", "13");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [gpsLocation, pathname, router, searchParams, sessionLocation]);
+
   const saveSessionLocation = useCallback((pin: ReportPin) => {
     const location = { latitude: pin.latitude, longitude: pin.longitude };
     setSessionLocation(location);
     sessionStorage.setItem("adjusted-map-location", JSON.stringify(location));
   }, []);
-
-  const startLocationAdjustment = useCallback(() => {
-    if (!activeLocation) return;
-    setReportPin({
-      latitude: activeLocation.latitude,
-      longitude: activeLocation.longitude,
-      originLatitude: activeLocation.latitude,
-      originLongitude: activeLocation.longitude,
-    });
-    setIsAdjustingLocation(true);
-  }, [activeLocation]);
 
   const filterOp = useMemo(() => {
     if (activeNetworks.size === 1) {
@@ -206,10 +216,10 @@ export default function MainMapView() {
       </div>
 
       {/* ── Top controls overlay ─────────────────────────────────────────────── */}
-      <div className="absolute top-0 left-0 right-0 z-20 p-4 sm:p-5 safe-area-inset-top pointer-events-none flex flex-col gap-3">
+      <div className="absolute top-0 left-0 right-0 z-20 p-3 sm:p-4 safe-area-inset-top pointer-events-none flex flex-col gap-2">
         
         {/* Row 1: Search + Locate */}
-        <div className="flex gap-3 items-center pointer-events-auto w-full max-w-full">
+        <div className="map-ui-enter flex gap-2 items-center pointer-events-auto w-full max-w-xl">
           <div className="flex-1 min-w-0">
             <SearchBar
               query={query}
@@ -227,31 +237,18 @@ export default function MainMapView() {
               onFlyToUser={handleFlyToUser}
             />
           </div>
-          {activeLocation && (
-            <button
-              type="button"
-              onClick={startLocationAdjustment}
-              aria-label="Adjust current location"
-              title="Adjust current location"
-              className="w-[48px] h-[48px] flex flex-shrink-0 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-gray-50"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2M3 12h2m14 0h2M8 16l8-8M8 8h.01M16 16h.01" />
-              </svg>
-            </button>
-          )}
         </div>
 
         {/* Row 2: Overflowing Filter Chips */}
-        <div className="w-full pointer-events-auto overflow-hidden">
-          <div className="flex items-center gap-2.5 overflow-x-auto pb-2 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className="map-ui-enter-delay w-full pointer-events-auto overflow-hidden">
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ WebkitOverflowScrolling: 'touch' }}>
             <NetworkFilterBar
               activeNetworks={activeNetworks}
               onToggleNetwork={toggleNetwork}
               siteCounts={siteCounts}
             />
             {allFeatures.length > 0 && (
-              <div className="px-4 py-2 rounded-full bg-white text-gray-500 text-[13px] font-medium shadow-[0_4px_14px_rgba(0,0,0,0.04)] whitespace-nowrap flex-shrink-0 ml-1 border border-gray-100">
+              <div className="px-3 py-2 rounded-full bg-white/95 text-gray-500 text-xs font-medium shadow-sm whitespace-nowrap flex-shrink-0 border border-gray-200">
                 {totalVisible.toLocaleString()} sites
               </div>
             )}
@@ -276,7 +273,7 @@ export default function MainMapView() {
 
       {/* ── Bottom controls container ────────────────────────────────────────── */}
       {/* 1. Layers & Legend controls (bottom right) */}
-      <div className="absolute bottom-[130px] sm:bottom-28 right-4 z-20 flex flex-col gap-3 items-end pointer-events-auto">
+      <div className="map-ui-enter-delay absolute bottom-[112px] sm:bottom-7 right-3 sm:right-4 z-20 flex flex-col gap-2 items-end pointer-events-auto">
         {/* Nearby toggle (only when location is available) */}
         {hasLocation && (
           <button
@@ -285,10 +282,10 @@ export default function MainMapView() {
             aria-label={showNearby ? "Hide nearby sites" : "Show nearby sites"}
             aria-pressed={showNearby}
             className={[
-              "flex items-center gap-2 px-3 py-2 rounded-xl border text-sm transition-all shadow-lg",
+              "flex h-11 items-center gap-2 rounded-full border px-3 text-sm transition-colors shadow-md",
               showNearby
                 ? "bg-blue-600 border-blue-500 text-white"
-                : "bg-white/90 backdrop-blur-md border-gray-300/70 text-gray-700 hover:text-gray-900 hover:bg-white",
+                : "bg-white/95 backdrop-blur-md border-gray-200 text-gray-700 hover:bg-white",
             ].join(" ")}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
@@ -311,7 +308,7 @@ export default function MainMapView() {
       </div>
 
       {/* 2. Floating Action Button (bottom center) */}
-      <div className="absolute bottom-6 sm:bottom-8 left-1/2 -translate-x-1/2 z-20 safe-area-inset-bottom">
+      <div className="absolute bottom-4 sm:bottom-7 left-1/2 -translate-x-1/2 z-20 safe-area-inset-bottom">
         <ReportButton onClick={() => setReportOpen(true)} />
       </div>
 
@@ -320,7 +317,7 @@ export default function MainMapView() {
         <div
           role="status"
           aria-live="polite"
-          className="absolute bottom-28 left-1/2 -translate-x-1/2 z-30 px-4 py-2.5 bg-white border border-amber-300 rounded-xl text-xs text-amber-700 shadow-xl max-w-xs text-center"
+          className="absolute bottom-24 left-1/2 -translate-x-1/2 z-30 px-4 py-2.5 bg-white border border-amber-300 rounded-2xl text-xs text-amber-700 shadow-lg max-w-xs text-center"
         >
           {geoState.errorMessage}
         </div>

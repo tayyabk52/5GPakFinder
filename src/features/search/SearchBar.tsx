@@ -65,7 +65,7 @@ export default function SearchBar({
           aria-autocomplete="list"
           aria-controls="search-results"
           aria-expanded={isSearching && results.length > 0}
-          className="w-full pl-11 pr-11 py-3.5 bg-white rounded-full text-gray-900 text-[15px] placeholder-gray-400 font-medium shadow-[0_12px_40px_rgba(0,0,0,0.08)] focus:outline-none focus:ring-2 focus:ring-black transition-all"
+          className="h-12 w-full pl-11 pr-11 bg-white rounded-full text-gray-900 text-[15px] placeholder:text-gray-500 font-medium border border-gray-200 shadow-[0_1px_3px_rgba(60,64,67,0.2),0_4px_8px_rgba(60,64,67,0.12)] focus:outline-none focus:ring-2 focus:ring-[#1a73e8]/30 focus:border-[#1a73e8] transition-colors"
         />
         {query && (
           <button
@@ -86,7 +86,7 @@ export default function SearchBar({
           id="search-results"
           role="listbox"
           aria-label="Search results"
-          className="absolute top-full left-0 right-0 mt-3 bg-white rounded-[24px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-50 max-h-64 overflow-y-auto"
+          className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-[0_8px_24px_rgba(60,64,67,0.18)] z-50 max-h-64 overflow-y-auto"
         >
           {results.length === 0 ? (
             <div className="px-4 py-3 text-sm text-gray-400">

@@ -6,7 +6,7 @@ export default function ReportButton({ onClick }: { onClick: () => void }) {
       id="report-coverage-button"
       onClick={onClick}
       aria-label="Report 5G coverage"
-      className="flex items-center gap-1.5 sm:gap-2 px-4 py-2.5 sm:px-6 sm:py-3.5 rounded-full bg-gray-900 text-white text-[13px] sm:text-[15px] font-bold shadow-[0_12px_40px_rgba(0,0,0,0.2)] hover:scale-105 transition-all"
+      className="map-ui-enter map-pressable flex h-12 items-center gap-2 px-5 sm:px-6 rounded-full bg-[#1a73e8] text-white text-sm font-semibold shadow-[0_2px_8px_rgba(26,115,232,0.35)] hover:bg-[#1967d2] active:bg-[#185abc]"
     >
       <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
         <path
@@ -16,8 +16,8 @@ export default function ReportButton({ onClick }: { onClick: () => void }) {
           d="M12 4v16m8-8H4"
         />
       </svg>
-      <span className="hidden sm:inline font-semibold px-1">Report 5G Drop</span>
-      <span className="sm:hidden font-semibold px-1">Report</span>
+      <span className="hidden sm:inline">Report coverage</span>
+      <span className="sm:hidden">Report</span>
     </button>
   );
 }

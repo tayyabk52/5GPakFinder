@@ -22,7 +22,7 @@ export default function HeatmapLegend({ mode, verifiedOnly, onToggleMode, onTogg
         onClick={() => setIsOpen((v) => !v)}
         aria-expanded={isOpen}
         aria-label={isOpen ? "Hide community reports legend" : "Community Reports"}
-        className="flex items-center gap-2 px-4 py-2.5 bg-white rounded-full text-gray-900 text-[14px] font-medium hover:bg-gray-50 transition-all shadow-[0_12px_40px_rgba(0,0,0,0.08)]"
+        className="map-pressable flex h-11 items-center gap-2 px-3.5 bg-white/95 border border-gray-200 rounded-full text-gray-900 text-sm font-medium hover:bg-white shadow-md"
       >
         <svg className="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
           {/* Signal / Activity Icon instead of Lightning */}
@@ -41,7 +41,7 @@ export default function HeatmapLegend({ mode, verifiedOnly, onToggleMode, onTogg
       </button>
 
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-3 w-64 bg-white rounded-[28px] p-5 shadow-[0_20px_60px_rgba(0,0,0,0.12)]">
+        <div className="map-popover-enter absolute bottom-full right-0 mb-2 w-64 bg-white rounded-2xl border border-gray-200 p-4 shadow-[0_8px_24px_rgba(60,64,67,0.18)]">
           <div className="flex items-center justify-between mb-2.5">
             <h3 className="text-xs text-gray-400 font-medium uppercase tracking-wider">Community reports</h3>
           </div>

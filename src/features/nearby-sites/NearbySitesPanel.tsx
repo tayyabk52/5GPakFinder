@@ -31,7 +31,7 @@ export default function NearbySitesPanel({
       role="complementary"
       aria-label="Nearby 5G sites"
       className={[
-        "fixed z-40 bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl",
+        "map-sheet-enter fixed z-40 bg-white/95 backdrop-blur-md border border-gray-200 shadow-2xl",
         // Mobile: bottom sheet above the detail sheet area
         "bottom-0 left-0 right-0 rounded-t-2xl max-h-[50vh] overflow-y-auto",
         // Desktop: inline in left sidebar or separate panel
