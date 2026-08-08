@@ -142,7 +142,7 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
             <div className="mb-4">
               <div className="flex flex-col gap-0.5 mb-2">
                 <span className="text-sm font-medium text-gray-800">Your location</span>
-                <span className="text-[11px] text-gray-500 leading-tight">We check reports manually. Your exact location is never stored or shown to others.</span>
+                <span className="text-[11px] text-gray-500 leading-tight">We store your location to place and verify this report. The public map shows only aggregated coverage data.</span>
               </div>
 
               {geo.position && !useManualPin ? (

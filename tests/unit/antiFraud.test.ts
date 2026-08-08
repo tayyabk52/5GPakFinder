@@ -14,16 +14,16 @@ const submission: ReportSubmission = {
 
 describe("runAntiFraud", () => {
   it("passes when the repository allows the submission", async () => {
-    const checkRateLimit = vi.fn(async () => true);
+    const checkSubmissionGate = vi.fn(async () => "allowed" as const);
     const result = await runAntiFraud({
       submission,
       ipHash: "iphash",
       ipRegionFar: false,
-      checkRateLimit,
+      checkSubmissionGate,
     });
 
     expect(result.pass).toBe(true);
-    expect(checkRateLimit).toHaveBeenCalledWith("iphash", submission.deviceFingerprint);
+    expect(checkSubmissionGate).toHaveBeenCalledWith("iphash", submission.deviceFingerprint);
   });
 
   it("returns a friendly reason when rate-limited", async () => {
@@ -31,10 +31,22 @@ describe("runAntiFraud", () => {
       submission,
       ipHash: "iphash",
       ipRegionFar: false,
-      checkRateLimit: vi.fn(async () => false),
+      checkSubmissionGate: vi.fn(async () => "rate_limited" as const),
     });
 
     expect(result.pass).toBe(false);
     expect(result.reason).toMatch(/too many reports/i);
+  });
+
+  it("rejects a permanently blocked device", async () => {
+    const result = await runAntiFraud({
+      submission,
+      ipHash: "iphash",
+      ipRegionFar: false,
+      checkSubmissionGate: vi.fn(async () => "blocked" as const),
+    });
+
+    expect(result.pass).toBe(false);
+    expect(result.reason).toMatch(/can no longer submit/i);
   });
 });

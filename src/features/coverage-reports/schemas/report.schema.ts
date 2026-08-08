@@ -12,17 +12,27 @@ const speedSchema = z.object({
   serverName: z.string().max(255).nullable().optional(),
   isWifi: z.boolean().optional().default(false),
   wifiDeviceModel: z.string().regex(/^[a-zA-Z0-9\-\s]*$/, "Invalid characters").max(50).nullable().optional(),
+}).strict().superRefine((speed, context) => {
+  const hasMeasurement = speed.downloadMbps !== null || speed.uploadMbps !== null || speed.pingMs !== null;
+  if (!hasMeasurement) {
+    context.addIssue({ code: "custom", message: "Speed data must include at least one measurement." });
+  }
+
+  if ((speed.source === "desktop" || speed.source === "mobile") &&
+      (!speed.speedtestUrl || !/^https:\/\/(?:www\.)?speedtest\.net\/result\/(?:i\/)?\d+\/?$/i.test(speed.speedtestUrl))) {
+    context.addIssue({ code: "custom", message: "Fetched results require a valid Speedtest result URL." });
+  }
 });
 
 export const ReportSubmissionSchema = z.object({
-  latitude: z.number().min(23).max(37),
-  longitude: z.number().min(60).max(78),
+  latitude: z.number().finite().min(23).max(37),
+  longitude: z.number().finite().min(60).max(78),
   accuracyMeters: z.number().int().nonnegative().nullable(),
   isManualPin: z.boolean(),
   operator: z.enum(["Jazz", "Zong", "Ufone"]),
   speed: speedSchema.nullable(),
   deviceFingerprint: z.string().min(6).max(128),
-});
+}).strict();
 
 export const CoverageCellSchema = z.object({
   geohashPrefix: z.string().min(1).max(9),

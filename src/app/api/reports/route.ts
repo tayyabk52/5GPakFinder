@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const IP_REGION_FAR_KM = 300;
 
 function clientIp(req: Request): string {
-  const forwardedFor = req.headers.get("x-forwarded-for");
+  const forwardedFor = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-forwarded-for");
   if (forwardedFor) {
     return forwardedFor.split(",")[0].trim();
   }
@@ -47,7 +47,11 @@ export async function POST(req: Request) {
   }
 
   const submission = parsed.data;
-  const salt = process.env.SUPABASE_IP_HASH_SALT ?? "";
+  const salt = process.env.SUPABASE_IP_HASH_SALT;
+  if (!salt) {
+    console.error("SUPABASE_IP_HASH_SALT is not configured.");
+    return NextResponse.json({ ok: false, reason: "Report submissions are temporarily unavailable." }, { status: 503 });
+  }
   const ipHash = hashIp(clientIp(req), salt);
   const ipRegionFar = isIpRegionFar(req, submission.latitude, submission.longitude);
 
@@ -83,7 +87,7 @@ export async function GET(req: Request) {
   const maxLng = toNumber("maxLng");
   const zoom = toNumber("zoom");
 
-  if ([minLat, minLng, maxLat, maxLng, zoom].some(Number.isNaN)) {
+  if ([minLat, minLng, maxLat, maxLng, zoom].some(Number.isNaN) || minLat < 23 || maxLat > 37 || minLng < 60 || maxLng > 78 || minLat >= maxLat || minLng >= maxLng || zoom < 0 || zoom > 22) {
     return NextResponse.json({ cells: [] }, { status: 200 });
   }
 
@@ -100,7 +104,7 @@ export async function GET(req: Request) {
       verifiedOnly,
     });
 
-    return NextResponse.json({ cells }, { status: 200 });
+    return NextResponse.json({ cells }, { status: 200, headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } });
   } catch (error) {
     console.error("GET /api/reports ERROR:", error);
     return NextResponse.json({ cells: [] }, { status: 500 });

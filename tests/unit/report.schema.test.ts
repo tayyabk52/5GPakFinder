@@ -6,22 +6,21 @@ const base = {
   longitude: 74.34,
   accuracyMeters: 20,
   isManualPin: false,
-  fiveGPresent: "yes",
   operator: "Jazz",
   speed: null,
   deviceFingerprint: "abc123def456",
 };
 
 describe("ReportSubmissionSchema", () => {
-  it("accepts a valid presence-only report", () => {
-    expect(ReportSubmissionSchema.parse(base)).toMatchObject({ fiveGPresent: "yes" });
+  it("accepts a valid report without speed data", () => {
+    expect(ReportSubmissionSchema.parse(base)).toMatchObject({ operator: "Jazz" });
   });
 
   it("rejects coordinates outside Pakistan bounds", () => {
     expect(() => ReportSubmissionSchema.parse({ ...base, latitude: 51.5 })).toThrow();
   });
 
-  it("rejects an invalid presence value", () => {
+  it("rejects unknown fields", () => {
     expect(() => ReportSubmissionSchema.parse({ ...base, fiveGPresent: "sometimes" })).toThrow();
   });
 
@@ -35,7 +34,7 @@ describe("ReportSubmissionSchema", () => {
     expect(ReportSubmissionSchema.parse({ ...base, speed }).speed?.downloadMbps).toBe(140);
   });
 
-  it("allows a null operator", () => {
-    expect(ReportSubmissionSchema.parse({ ...base, operator: null }).operator).toBeNull();
+  it("rejects a null operator", () => {
+    expect(() => ReportSubmissionSchema.parse({ ...base, operator: null })).toThrow();
   });
 });

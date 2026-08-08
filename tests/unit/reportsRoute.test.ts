@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/server/reports/repository", () => ({
   supabaseRepository: {
-    checkRateLimit: vi.fn(async () => true),
+    checkSubmissionGate: vi.fn(async () => "allowed"),
     insertReport: vi.fn(async () => {}),
     getCoverageCells: vi.fn(async () => [
       {
@@ -19,7 +19,9 @@ vi.mock("@/server/reports/repository", () => ({
         avgTrust: 0.8,
         jazzCount: 3,
         zongCount: 0,
-        unknownCount: 0,
+        zongAvgDownload: null,
+        ufoneCount: 0,
+        ufoneAvgDownload: null,
       },
     ]),
   },
@@ -33,7 +35,6 @@ const body = {
   longitude: 74.34,
   accuracyMeters: 10,
   isManualPin: false,
-  fiveGPresent: "yes",
   operator: "Jazz",
   speed: null,
   deviceFingerprint: "abc123def456",
@@ -41,6 +42,7 @@ const body = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  process.env.SUPABASE_IP_HASH_SALT = "test-salt";
 });
 
 describe("POST /api/reports", () => {
@@ -67,7 +69,7 @@ describe("POST /api/reports", () => {
     const request = new Request("http://localhost/api/reports", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ ...body, fiveGPresent: "nope" }),
+      body: JSON.stringify({ ...body, operator: "invalid" }),
     });
 
     const response = await POST(request);
@@ -75,7 +77,7 @@ describe("POST /api/reports", () => {
   });
 
   it("returns 429 when the repository reports rate-limited", async () => {
-    (supabaseRepository.checkRateLimit as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
+    (supabaseRepository.checkSubmissionGate as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce("rate_limited");
 
     const request = new Request("http://localhost/api/reports", {
       method: "POST",

@@ -31,8 +31,14 @@ export interface UseGeolocationReturn extends GeolocationState {
 
 const GEOLOCATION_OPTIONS: PositionOptions = {
   enableHighAccuracy: true,
+  timeout: 20000,
+  maximumAge: 60_000,
+};
+
+const FALLBACK_GEOLOCATION_OPTIONS: PositionOptions = {
+  enableHighAccuracy: false,
   timeout: 15000,
-  maximumAge: 0, // Force live fresh GPS read, no stale cache
+  maximumAge: 300_000,
 };
 
 export function useGeolocation(): UseGeolocationReturn {
@@ -59,40 +65,71 @@ export function useGeolocation(): UseGeolocationReturn {
       watchIdRef.current = null;
     }
 
-    // Start watching position so GPS hardware progressively refines coordinates
-    const watchId = navigator.geolocation.watchPosition(
+    const setPosition = (position: GeolocationPosition) => {
+      const accuracy = position.coords.accuracy;
+      setState({
+        status: "granted",
+        position,
+        accuracy: Math.round(accuracy),
+        errorMessage: null,
+      });
+    };
+
+    const setError = (error: GeolocationPositionError) => {
+      setState((prev) => {
+        if (prev.status === "granted") return prev;
+        let msg = "An unknown error occurred while getting your location.";
+        let status: GeolocationStatus = "error";
+        if (error.code === GeolocationPositionError.PERMISSION_DENIED) {
+          status = "denied";
+          msg = "Location access was denied. Enable it in your browser settings.";
+        } else if (error.code === GeolocationPositionError.TIMEOUT) {
+          status = "timeout";
+          msg = "Location request timed out. Please try again.";
+        } else if (error.code === GeolocationPositionError.POSITION_UNAVAILABLE) {
+          status = "unavailable";
+          msg = "Your location could not be determined.";
+        }
+        return { status, position: null, accuracy: null, errorMessage: msg };
+      });
+    };
+
+    const startWatching = () => {
+      // After the permission prompt and initial reading, continue refining the position.
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        setPosition,
+        (error) => {
+          // Do not discard a successfully acquired position if later watch updates fail.
+          setError(error);
+        },
+        GEOLOCATION_OPTIONS
+      );
+    };
+
+    // iOS Safari is more reliable when the user gesture starts with a one-shot request.
+    // It also lets us retry with lower accuracy when GPS cannot obtain a precise fix indoors.
+    navigator.geolocation.getCurrentPosition(
       (position) => {
-        const accuracy = position.coords.accuracy;
-        setState({
-          status: "granted",
-          position,
-          accuracy: Math.round(accuracy),
-          errorMessage: null,
-        });
+        setPosition(position);
+        startWatching();
       },
       (error) => {
-        // If watch returns an error and we haven't received a granted position yet
-        setState((prev) => {
-          if (prev.status === "granted") return prev;
-          let msg = "An unknown error occurred while getting your location.";
-          let status: GeolocationStatus = "error";
-          if (error.code === GeolocationPositionError.PERMISSION_DENIED) {
-            status = "denied";
-            msg = "Location access was denied. Enable it in your browser settings.";
-          } else if (error.code === GeolocationPositionError.TIMEOUT) {
-            status = "timeout";
-            msg = "Location request timed out. Please try again.";
-          } else if (error.code === GeolocationPositionError.POSITION_UNAVAILABLE) {
-            status = "unavailable";
-            msg = "Your location could not be determined.";
-          }
-          return { status, position: null, accuracy: null, errorMessage: msg };
-        });
+        if (error.code === GeolocationPositionError.PERMISSION_DENIED) {
+          setError(error);
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setPosition(position);
+            startWatching();
+          },
+          setError,
+          FALLBACK_GEOLOCATION_OPTIONS
+        );
       },
       GEOLOCATION_OPTIONS
     );
-
-    watchIdRef.current = watchId;
   }, []);
 
   const clearLocation = useCallback(() => {

@@ -4,7 +4,7 @@ export interface AntiFraudDeps {
   submission: ReportSubmission;
   ipHash: string;
   ipRegionFar: boolean;
-  checkRateLimit: (ipHash: string, deviceFingerprint: string) => Promise<boolean>;
+  checkSubmissionGate: (ipHash: string, deviceFingerprint: string) => Promise<"allowed" | "rate_limited" | "blocked">;
 }
 
 export interface AntiFraudResult {
@@ -13,8 +13,11 @@ export interface AntiFraudResult {
 }
 
 export async function runAntiFraud(deps: AntiFraudDeps): Promise<AntiFraudResult> {
-  const allowed = await deps.checkRateLimit(deps.ipHash, deps.submission.deviceFingerprint);
-  if (!allowed) {
+  const decision = await deps.checkSubmissionGate(deps.ipHash, deps.submission.deviceFingerprint);
+  if (decision === "blocked") {
+    return { pass: false, reason: "This device can no longer submit coverage reports." };
+  }
+  if (decision !== "allowed") {
     return { pass: false, reason: "Too many reports recently." };
   }
 

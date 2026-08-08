@@ -79,6 +79,7 @@ const SOURCE_ID = "cell-sites";
 const LAYER_CLUSTER = "clusters";
 const LAYER_CLUSTER_COUNT = "cluster-count";
 const LAYER_UNCLUSTERED = "unclustered-points";
+const MAX_MOBILE_LOCATION_ACCURACY_RADIUS_METERS = 100;
 
 interface MapContainerProps {
   onSiteSelect: (feature: CellSiteFeature | null) => void;
@@ -185,7 +186,8 @@ export default function MapContainer({
           data: data as GeoJSON.FeatureCollection,
           cluster: true,
           clusterRadius: 50,
-          clusterMaxZoom: 13,
+          // Cluster only below zoom 10 so each site is visible from zoom 10 onward.
+          clusterMaxZoom: 9,
         });
       }
 
@@ -499,8 +501,12 @@ export default function MapContainer({
             .addTo(map);
         }
 
-        // Draw dynamic accuracy circle
-        const circleGeoJSON = createGeoJSONCircle([longitude, latitude], accuracy || 20);
+        // Mobile devices can report a coarse GPS accuracy that overwhelms the map.
+        // Keep the full accuracy radius on larger screens while capping only its mobile display.
+        const accuracyRadius = window.matchMedia("(max-width: 639px)").matches
+          ? Math.min(accuracy || 20, MAX_MOBILE_LOCATION_ACCURACY_RADIUS_METERS)
+          : accuracy || 20;
+        const circleGeoJSON = createGeoJSONCircle([longitude, latitude], accuracyRadius);
         const source = map.getSource("user-accuracy-source") as any;
         if (source) {
           source.setData(circleGeoJSON);

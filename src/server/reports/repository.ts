@@ -37,7 +37,7 @@ export interface CoverageCellQuery {
 }
 
 export interface Repository {
-  checkRateLimit(ipHash: string, deviceFingerprint: string): Promise<boolean>;
+  checkSubmissionGate(ipHash: string, deviceFingerprint: string): Promise<"allowed" | "rate_limited" | "blocked">;
   insertReport(row: ReportRow): Promise<void>;
   getCoverageCells(query: CoverageCellQuery): Promise<CoverageCell[]>;
 }
@@ -49,9 +49,9 @@ function mapCoverageCell(row: CoverageCellRow): CoverageCell {
 }
 
 export const supabaseRepository: Repository = {
-  async checkRateLimit(ipHash, deviceFingerprint) {
+  async checkSubmissionGate(ipHash, deviceFingerprint) {
     const client = createSupabaseServerClient();
-    const { data, error } = await client.rpc("check_rate_limit", {
+    const { data, error } = await client.rpc("check_report_submission", {
       p_ip_hash: ipHash,
       p_fingerprint: deviceFingerprint,
     });
@@ -60,7 +60,8 @@ export const supabaseRepository: Repository = {
       throw error;
     }
 
-    return Boolean(data);
+    if (data === "allowed" || data === "rate_limited" || data === "blocked") return data;
+    throw new Error("Invalid report-submission gate response.");
   },
 
   async insertReport(row) {

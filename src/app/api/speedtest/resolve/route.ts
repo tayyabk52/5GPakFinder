@@ -75,6 +75,7 @@ export async function POST(req: Request) {
 
     const res = await fetch(meta.apiUrl, {
       method: "GET",
+      signal: AbortSignal.timeout(10_000),
       headers: {
         Accept: "application/json",
         Referer: meta.publicUrl,

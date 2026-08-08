@@ -21,7 +21,7 @@ export async function submitReport(
     submission,
     ipHash,
     ipRegionFar,
-    checkRateLimit: (hash, fingerprint) => repository.checkRateLimit(hash, fingerprint),
+    checkSubmissionGate: (hash, fingerprint) => repository.checkSubmissionGate(hash, fingerprint),
   });
 
   if (!fraud.pass) {

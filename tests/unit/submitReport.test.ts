@@ -5,7 +5,7 @@ import type { ReportSubmission } from "@/features/coverage-reports/types";
 
 function makeRepo(overrides: Partial<Repository> = {}): Repository {
   return {
-    checkRateLimit: vi.fn(async () => true),
+    checkSubmissionGate: vi.fn(async () => "allowed" as const),
     insertReport: vi.fn(async () => {}),
     getCoverageCells: vi.fn(async () => []),
     ...overrides,
@@ -47,7 +47,7 @@ describe("submitReport", () => {
   });
 
   it("does not insert and returns a reason when rate limited", async () => {
-    const repo = makeRepo({ checkRateLimit: vi.fn(async () => false) });
+    const repo = makeRepo({ checkSubmissionGate: vi.fn(async () => "rate_limited" as const) });
     const res = await submitReport({ submission, ipHash: "x", ipRegionFar: false, repository: repo });
 
     expect(res.ok).toBe(false);
