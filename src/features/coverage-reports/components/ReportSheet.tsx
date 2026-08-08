@@ -217,6 +217,21 @@ export default function ReportSheet({
                 {useManualPin ? "Use GPS location instead" : "Enter location manually"}
               </button>
 
+              {geo.position && !useManualPin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const { latitude, longitude } = geo.position!.coords;
+                    setManualPin({ lat: String(latitude), lng: String(longitude) });
+                    setUseManualPin(true);
+                    onStartPinAdjustment(latitude, longitude);
+                  }}
+                  className="mt-2 ml-3 text-xs text-blue-600 hover:text-blue-700"
+                >
+                  Adjust pin on map
+                </button>
+              )}
+
               {useManualPin && (
                 <div className="mt-2">
                   {geo.position && (
