@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, MapLayerMouseEvent, Popup } from "maplibre-gl";
 import type { AffectedCell } from "@/features/network-status/types";
 
 // Kept as native layers rather than DOM markers so outages stay in one predictable
@@ -19,9 +19,24 @@ const colorExpression: ExpressionSpecification = [
   "#f59e0b",
 ];
 
+const statusCopy = {
+  possible: "Possible issue",
+  high_agreement: "High community agreement",
+  recovering: "Recovering",
+} as const;
+
+function ageLabel(reportedAt: string) {
+  const minutes = Math.max(0, Math.round((Date.now() - new Date(reportedAt).getTime()) / 60_000));
+  if (!Number.isFinite(minutes)) return "Recently reported";
+  if (minutes < 2) return "Reported just now";
+  if (minutes < 60) return `Reported ${minutes} min ago`;
+  return `Reported ${Math.round(minutes / 60)} hr ago`;
+}
+
 export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, operator?: string) {
   const [cells, setCells] = useState<AffectedCell[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const popup = useRef<Popup | null>(null);
 
   const refresh = useCallback(async () => {
     if (!map) return;
@@ -59,6 +74,42 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
 
   useEffect(() => {
     if (!map) return;
+    let handlersAttached = false;
+    const onClick = async (event: MapLayerMouseEvent) => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      const properties = feature.properties ?? {};
+      const status = String(properties.status) as keyof typeof statusCopy;
+      const count = Number(properties.count) || 0;
+      const confidence = Math.round((Number(properties.confidence) || 0) * 100);
+      const reportedAt = String(properties.firstReportedAt ?? "");
+      const { Popup: MapPopup } = await import("maplibre-gl");
+
+      const card = document.createElement("section");
+      card.className = "min-w-52 p-1 text-slate-900";
+      const heading = document.createElement("p");
+      heading.className = "text-sm font-bold tracking-tight";
+      heading.textContent = statusCopy[status] ?? "Community signal";
+      const summary = document.createElement("p");
+      summary.className = "mt-1 text-xs leading-5 text-slate-600";
+      summary.textContent = `${count} community report${count === 1 ? "" : "s"} · ${confidence}% confidence`;
+      const timestamp = document.createElement("p");
+      timestamp.className = "mt-2 text-xs font-medium text-slate-500";
+      timestamp.textContent = ageLabel(reportedAt);
+      const note = document.createElement("p");
+      note.className = "mt-3 border-t border-slate-100 pt-2 text-[11px] leading-4 text-slate-500";
+      note.textContent = "Community signal, not an operator-confirmed outage.";
+      card.append(heading, summary, timestamp, note);
+
+      popup.current?.remove();
+      popup.current = new MapPopup({ closeButton: true, closeOnClick: true, offset: 16, maxWidth: "250px" })
+        .setLngLat(event.lngLat)
+        .setDOMContent(card)
+        .addTo(map);
+    };
+    const onEnter = () => { map.getCanvas().style.cursor = "pointer"; };
+    const onLeave = () => { map.getCanvas().style.cursor = ""; };
+
     const add = () => {
       if (!map.isStyleLoaded()) {
         map.once("idle", add);
@@ -112,9 +163,22 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
           },
         }, before);
       }
+      if (!handlersAttached) {
+        map.on("click", coreId, onClick);
+        map.on("mouseenter", coreId, onEnter);
+        map.on("mouseleave", coreId, onLeave);
+        handlersAttached = true;
+      }
     };
     add();
     return () => {
+      popup.current?.remove();
+      popup.current = null;
+      if (handlersAttached) {
+        map.off("click", coreId, onClick);
+        map.off("mouseenter", coreId, onEnter);
+        map.off("mouseleave", coreId, onLeave);
+      }
       for (const id of [labelId, coreId, haloId]) if (map.getLayer(id)) map.removeLayer(id);
       if (map.getSource(sourceId)) map.removeSource(sourceId);
     };
@@ -128,6 +192,7 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
         status: cell.status,
         count: cell.reportCount,
         confidence: cell.confidence,
+        firstReportedAt: cell.firstReportedAt,
       },
       geometry: { type: "Point" as const, coordinates: [cell.centerLng, cell.centerLat] },
     }));
