@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { BugReportSchema } from "@/features/bug-reports/schema";
 import { bugRepository } from "@/server/bugs/repository";
 import { hashIp } from "@/server/reports/ipHash";
+import { clientIp, isTrustedMutationRequest } from "@/server/security/request";
 
 export const runtime = "nodejs";
 const MAX_BODY_BYTES = 12 * 1024;
-function clientIp(req: Request) { return (req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "0.0.0.0").split(",")[0].trim(); }
-
 export async function POST(req: Request) {
+  if (!isTrustedMutationRequest(req)) return NextResponse.json({ ok: false, reason: "Cross-site submissions are not allowed." }, { status: 403 });
   if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return NextResponse.json({ ok: false, reason: "Bug report is too large." }, { status: 413 });
   if (!req.headers.get("content-type")?.includes("application/json")) return NextResponse.json({ ok: false, reason: "Expected a JSON bug report." }, { status: 415 });
   const raw = await req.json().catch(() => null);

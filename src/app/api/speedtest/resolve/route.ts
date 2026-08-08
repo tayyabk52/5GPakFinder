@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { isTrustedMutationRequest } from "@/server/security/request";
+import { consumeSpeedtestBudget } from "@/server/security/speedtest";
 
 const SPEEDTEST_RESULT_RE =
   /^https:\/\/(?:www\.)?speedtest\.net\/result\/(i\/)?(\d+)\/?$/i;
 
 export const runtime = "nodejs";
+const MAX_BODY_BYTES = 2 * 1024;
 
 function parseSpeedtestUrl(input: string) {
   const url = String(input || "").trim();
@@ -22,8 +25,11 @@ function parseSpeedtestUrl(input: string) {
   return { id, isMobile, publicUrl: url, apiUrl };
 }
 
-function normalizeSpeedtestResult(raw: any, meta: any) {
-  const toMbps = (v: any) =>
+type SpeedtestPayload = Record<string, unknown>;
+type SpeedtestMeta = { id: string; isMobile: boolean; publicUrl: string; apiUrl: string };
+
+function normalizeSpeedtestResult(raw: SpeedtestPayload, meta: SpeedtestMeta) {
+  const toMbps = (v: unknown) =>
     v == null || v === "" ? null : Number((Number(v) / 1000).toFixed(2));
 
   const ping =
@@ -53,6 +59,12 @@ function normalizeSpeedtestResult(raw: any, meta: any) {
 }
 
 export async function POST(req: Request) {
+  if (!isTrustedMutationRequest(req)) return NextResponse.json({ ok: false, reason: "Cross-site requests are not allowed." }, { status: 403 });
+  if (Number(req.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return NextResponse.json({ ok: false, reason: "Request is too large." }, { status: 413 });
+  if (!req.headers.get("content-type")?.toLowerCase().includes("application/json")) return NextResponse.json({ ok: false, reason: "Expected a JSON request." }, { status: 415 });
+  const budget = await consumeSpeedtestBudget(req, "resolve");
+  if (budget === "rate_limited") return NextResponse.json({ ok: false, reason: "Please wait before resolving another result." }, { status: 429, headers: { "cache-control": "no-store" } });
+  if (budget === "unavailable") return NextResponse.json({ ok: false, reason: "Speedtest resolution is temporarily unavailable." }, { status: 503, headers: { "cache-control": "no-store" } });
   try {
     const { url } = await req.json();
 
@@ -98,7 +110,11 @@ export async function POST(req: Request) {
       );
     }
 
-    const raw = await res.json();
+    const payload: unknown = await res.json();
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return NextResponse.json({ ok: false, reason: "Speedtest payload was invalid." }, { status: 502 });
+    }
+    const raw = payload as SpeedtestPayload;
     const data = normalizeSpeedtestResult(raw, meta);
 
     if (data.downloadMbps == null || data.uploadMbps == null) {
@@ -108,7 +124,7 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ ok: true, data });
+    return NextResponse.json({ ok: true, data }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     console.error("Speedtest resolution error:", error);
     return NextResponse.json(

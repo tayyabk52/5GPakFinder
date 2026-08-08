@@ -7,21 +7,13 @@ import { haversineDistanceKm } from "@/lib/haversine";
 import { precisionForZoom } from "@/features/coverage-reports/geohash/geohash";
 import { VERIFIED_ONLY_THRESHOLD, VISIBLE_TRUST_THRESHOLD } from "@/features/coverage-reports/trust/trustTiers";
 import { isKnownForeignRequest } from "@/server/geo/pakistan";
+import { clientIp, isTrustedMutationRequest } from "@/server/security/request";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const IP_REGION_FAR_KM = 300;
 const MAX_REPORT_BODY_BYTES = 16 * 1024;
-
-function clientIp(req: Request): string {
-  const forwardedFor = req.headers.get("x-vercel-forwarded-for") ?? req.headers.get("x-forwarded-for");
-  if (forwardedFor) {
-    return forwardedFor.split(",")[0].trim();
-  }
-
-  return req.headers.get("x-real-ip") ?? "0.0.0.0";
-}
 
 function isIpRegionFar(req: Request, lat: number, lng: number): boolean {
   const ipLat = parseFloat(req.headers.get("x-vercel-ip-latitude") ?? "");
@@ -35,6 +27,9 @@ function isIpRegionFar(req: Request, lat: number, lng: number): boolean {
 }
 
 export async function POST(req: Request) {
+  if (!isTrustedMutationRequest(req)) {
+    return NextResponse.json({ ok: false, reason: "Cross-site submissions are not allowed." }, { status: 403 });
+  }
   const length = Number(req.headers.get("content-length") ?? "0");
   if (Number.isFinite(length) && length > MAX_REPORT_BODY_BYTES) {
     return NextResponse.json({ ok: false, reason: "Report payload is too large." }, { status: 413 });
