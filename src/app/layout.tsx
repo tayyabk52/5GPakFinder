@@ -11,46 +11,38 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Pakistan 5G Map — Jazz & Zong Coverage",
-  description:
-    "Interactive map of 5G cell sites across Pakistan, including Jazz and Zong networks. Provider-published coordinates from official map sources.",
+  title: "5GPak — Pakistan 5G Coverage & Network Status",
+  description: "Pakistan's community 5G coverage map and network-status companion for Jazz, Zong, and Ufone / Onic.",
   keywords: ["Pakistan 5G", "Jazz 5G", "Zong 5G", "Pakistan telecom", "5G coverage map"],
-  authors: [{ name: "Pakistan 5G Map" }],
+  authors: [{ name: "5GPak" }],
   openGraph: {
-    title: "Pakistan 5G Map",
-    description: "Interactive map of 5G cell sites across Pakistan — Jazz and Zong networks.",
+    title: "5GPak",
+    description: "Pakistan 5G coverage and community network status.",
     type: "website",
   },
   twitter: {
     card: "summary",
-    title: "Pakistan 5G Map",
-    description: "Interactive map of 5G cell sites across Pakistan — Jazz and Zong networks.",
+    title: "5GPak",
+    description: "Pakistan 5G coverage and community network status.",
   },
 };
 
-// Next.js 15+ requires viewport/themeColor in a separate export
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   viewportFit: "cover",
-  themeColor: "#FFFFFF",
+  themeColor: "#1D1D1D",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <head>
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-      </head>
-      <body className={`${inter.variable} font-sans antialiased bg-gray-50 text-gray-900`}>
-        <AppShell>{children}</AppShell>
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="en">
+    <head>
+      <meta name="mobile-web-app-capable" content="yes" />
+      <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    </head>
+    <body className={`${inter.variable} bg-gray-50 font-sans text-gray-900 antialiased`}>
+      <AppShell>{children}</AppShell>
+    </body>
+  </html>;
 }
