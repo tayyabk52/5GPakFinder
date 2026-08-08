@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     const { data, error } = await createSupabaseServerClient().rpc("get_coverage_insights", { p_generation: generation });
     if (error) throw error;
     // Let clients discard a response that belonged to a previous technology tab.
-    return NextResponse.json({ generation, insights: data ?? null }, { headers: { "cache-control": "public, s-maxage=300, stale-while-revalidate=600" } });
+    return NextResponse.json({ generation, insights: data ?? null }, { headers: { "cache-control": "no-store, max-age=0, must-revalidate" } });
   } catch (error) {
     console.error("GET /api/insights failed", error);
     return NextResponse.json({ insights: null, error: "Insights are temporarily unavailable." }, { status: 500 });

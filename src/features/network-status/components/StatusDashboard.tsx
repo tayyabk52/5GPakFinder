@@ -48,7 +48,7 @@ export default function StatusDashboard() {
   const [submitting, setSubmitting] = useState(false);
   const { fingerprint, isReady: fingerprintReady } = useFingerprint();
 
-  const load = () => void fetch(`/api/network-status/history?days=7&operator=${operator}`)
+  const load = () => void fetch(`/api/network-status/history?days=7&operator=${operator}`, { cache: "no-store" })
     .then((response) => response.ok ? response.json() : Promise.reject())
     .then((data) => setIncidents(data.incidents ?? []))
     .catch(() => setIncidents([]));

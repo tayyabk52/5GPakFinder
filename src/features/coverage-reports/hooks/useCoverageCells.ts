@@ -9,12 +9,16 @@ import { fetchCoverageCells } from "@/features/coverage-reports/api/reportsClien
 export function useCoverageCells(map: MapLibreMap | null, verifiedOnly: boolean, generation: NetworkGeneration) {
   const [cells, setCells] = useState<CoverageCell[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const request = useRef<AbortController | null>(null);
 
   const refresh = useCallback(async () => {
     if (!map) {
       return;
     }
 
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     const bounds = map.getBounds();
     const zoom = map.getZoom();
     const nextCells = await fetchCoverageCells({
@@ -25,9 +29,9 @@ export function useCoverageCells(map: MapLibreMap | null, verifiedOnly: boolean,
       zoom,
       verifiedOnly,
       generation,
-    });
+    }, controller.signal);
 
-    setCells(nextCells);
+    if (!controller.signal.aborted) setCells(nextCells);
   }, [map, verifiedOnly, generation]);
 
   useEffect(() => {
@@ -39,6 +43,7 @@ export function useCoverageCells(map: MapLibreMap | null, verifiedOnly: boolean,
       if (timer.current) {
         clearTimeout(timer.current);
       }
+      request.current?.abort();
 
       timer.current = setTimeout(() => {
         void refresh();

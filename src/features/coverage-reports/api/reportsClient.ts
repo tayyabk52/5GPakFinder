@@ -33,7 +33,7 @@ export interface CellQueryInput {
   generation: NetworkGeneration;
 }
 
-export async function fetchCoverageCells(query: CellQueryInput): Promise<CoverageCell[]> {
+export async function fetchCoverageCells(query: CellQueryInput, signal?: AbortSignal): Promise<CoverageCell[]> {
   const params = new URLSearchParams({
     minLat: String(query.minLat),
     minLng: String(query.minLng),
@@ -45,7 +45,7 @@ export async function fetchCoverageCells(query: CellQueryInput): Promise<Coverag
   });
 
   try {
-    const response = await fetch(`/api/reports?${params.toString()}`);
+    const response = await fetch(`/api/reports?${params.toString()}`, { cache: "no-store", signal });
     if (!response.ok) {
       return [];
     }

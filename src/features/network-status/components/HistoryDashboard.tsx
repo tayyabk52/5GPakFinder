@@ -21,7 +21,7 @@ export default function HistoryDashboard() {
     const query = new URLSearchParams({ days: String(days) });
     if (operator !== "all") query.set("operator", operator);
     setLoading(true); setError("");
-    void fetch("/api/network-status/history?" + query, { signal: controller.signal })
+    void fetch("/api/network-status/history?" + query, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error ?? "History is temporarily unavailable.");

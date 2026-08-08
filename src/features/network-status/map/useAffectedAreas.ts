@@ -36,10 +36,14 @@ function ageLabel(reportedAt: string) {
 export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, operator?: string) {
   const [cells, setCells] = useState<AffectedCell[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const request = useRef<AbortController | null>(null);
   const popup = useRef<Popup | null>(null);
 
   const refresh = useCallback(async () => {
     if (!map) return;
+    request.current?.abort();
+    const controller = new AbortController();
+    request.current = controller;
     const bounds = map.getBounds();
     const query = new URLSearchParams({
       minLat: String(bounds.getSouth()), minLng: String(bounds.getWest()),
@@ -49,11 +53,12 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
     if (operator) query.set("operator", operator);
 
     try {
-      const response = await fetch(`/api/network-status/cells?${query}`);
+      const response = await fetch(`/api/network-status/cells?${query}`, { cache: "no-store", signal: controller.signal });
       if (!response.ok) throw new Error("Unable to load affected areas");
       const data = await response.json();
-      setCells(data.cells ?? []);
+      if (!controller.signal.aborted) setCells(data.cells ?? []);
     } catch {
+      if (controller.signal.aborted) return;
       setCells([]);
     }
   }, [map, operator]);
@@ -62,6 +67,7 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
     if (!map) return;
     const sync = () => {
       if (timer.current) clearTimeout(timer.current);
+      request.current?.abort();
       timer.current = setTimeout(() => void refresh(), 250);
     };
     map.on("moveend", sync);
@@ -69,6 +75,7 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
     return () => {
       map.off("moveend", sync);
       if (timer.current) clearTimeout(timer.current);
+      request.current?.abort();
     };
   }, [map, refresh]);
 

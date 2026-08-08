@@ -32,7 +32,7 @@ export default function InsightsDashboard() {
     setData(null);
     setError("");
 
-    void fetch(`/api/insights?generation=${generation}`, { signal: controller.signal })
+    void fetch(`/api/insights?generation=${generation}`, { cache: "no-store", signal: controller.signal })
       .then(async (response) => {
         const body = await response.json().catch(() => ({})) as Partial<InsightsResponse>;
         if (!response.ok) throw new Error(body.error ?? "Insights are temporarily unavailable.");

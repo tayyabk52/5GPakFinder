@@ -114,7 +114,7 @@ export async function GET(req: Request) {
       generation,
     });
 
-    return NextResponse.json({ cells }, { status: 200, headers: { "cache-control": "public, s-maxage=30, stale-while-revalidate=60" } });
+    return NextResponse.json({ cells }, { status: 200, headers: { "cache-control": "no-store, max-age=0, must-revalidate" } });
   } catch (error) {
     console.error("GET /api/reports ERROR:", error);
     return NextResponse.json({ cells: [] }, { status: 500 });
