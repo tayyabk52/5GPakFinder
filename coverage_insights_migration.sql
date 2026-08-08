@@ -9,7 +9,7 @@ language sql
 stable
 as $$
   with visible_reports as (
-    select * from public.reports where status = 'visible' and trust_score >= .45 and network_generation = p_generation
+    select * from public.reports where status = 'visible' and trust_score >= .45 and network_generation = public.validate_coverage_generation(p_generation)
   ),
   city_bounds(name, min_lat, max_lat, min_lng, max_lng) as (
     values

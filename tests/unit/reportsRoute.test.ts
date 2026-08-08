@@ -113,5 +113,16 @@ describe("GET /api/reports", () => {
     const json = await response.json();
     expect(json.cells).toHaveLength(1);
     expect(json.cells[0].geohashPrefix).toBe("tuvz");
+    expect(supabaseRepository.getCoverageCells).toHaveBeenCalledWith(expect.objectContaining({ generation: "5g" }));
+  });
+
+  it("uses the LTE dataset only when LTE is selected", async () => {
+    const request = new Request(
+      "http://localhost/api/reports?minLat=30&minLng=73&maxLat=32&maxLng=75&zoom=12&verified=false&generation=4g"
+    );
+
+    await GET(request);
+
+    expect(supabaseRepository.getCoverageCells).toHaveBeenCalledWith(expect.objectContaining({ generation: "4g" }));
   });
 });

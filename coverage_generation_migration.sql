@@ -8,6 +8,21 @@ alter table public.reports
 create index if not exists reports_generation_lookup_idx
   on public.reports (network_generation, status, geohash, created_at desc);
 
+-- The app validates this too. Keeping validation in the database prevents a
+-- future direct RPC consumer from querying an accidental mixed dataset.
+create or replace function public.validate_coverage_generation(p_generation text)
+returns text
+language plpgsql
+immutable
+as $$
+begin
+  if p_generation not in ('4g', '5g') then
+    raise exception 'Unsupported network generation';
+  end if;
+  return p_generation;
+end;
+$$;
+
 -- Existing reports predate technology selection and remain classified as 5G.
 -- New reports must explicitly choose 5G or 4G LTE in the app.
 create or replace function public.get_coverage_cells(
@@ -27,7 +42,7 @@ language sql stable as $$
     count(*) filter (where operator = 'Zong'), avg(download_mbps) filter (where operator = 'Zong'),
     count(*) filter (where operator = 'Ufone'), avg(download_mbps) filter (where operator = 'Ufone')
   from public.reports
-  where status = 'visible' and network_generation = p_generation and trust_score >= p_min_trust
+  where status = 'visible' and network_generation = public.validate_coverage_generation(p_generation) and trust_score >= p_min_trust
     and (not p_verified_only or trust_score >= .75)
     and latitude between min_lat and max_lat and longitude between min_lng and max_lng
   group by left(geohash, p_precision);

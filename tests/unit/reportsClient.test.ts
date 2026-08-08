@@ -80,6 +80,17 @@ describe("reportsClient.fetchCoverageCells", () => {
     const cells = await fetchCoverageCells({ minLat: 30, minLng: 73, maxLat: 32, maxLng: 75, zoom: 12, verifiedOnly: false, generation: "5g" });
     expect(cells).toHaveLength(1);
     expect(cells[0].geohashPrefix).toBe("tuvz");
+    const requestUrl = String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(requestUrl).toContain("generation=5g");
+  });
+
+  it("keeps LTE cell requests separate", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ cells: [] }), { status: 200 })));
+
+    await fetchCoverageCells({ minLat: 30, minLng: 73, maxLat: 32, maxLng: 75, zoom: 12, verifiedOnly: false, generation: "4g" });
+
+    const requestUrl = String((fetch as ReturnType<typeof vi.fn>).mock.calls[0][0]);
+    expect(requestUrl).toContain("generation=4g");
   });
 
   it("returns [] on a non-ok response", async () => {
