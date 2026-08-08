@@ -17,6 +17,8 @@ interface ReportSheetProps {
   adjustedPin: ReportPin | null;
   onStartPinAdjustment: (latitude: number, longitude: number) => void;
   onStopPinAdjustment: () => void;
+  onConfirmPinAdjustment: (pin: ReportPin) => void;
+  sessionLocation: { latitude: number; longitude: number } | null;
 }
 
 
@@ -30,6 +32,8 @@ export default function ReportSheet({
   adjustedPin,
   onStartPinAdjustment,
   onStopPinAdjustment,
+  onConfirmPinAdjustment,
+  sessionLocation,
 }: ReportSheetProps) {
   const geo = useGeolocation();
   const { fingerprint, isReady } = useFingerprint();
@@ -40,6 +44,7 @@ export default function ReportSheet({
   const [manualPin, setManualPin] = useState<{ lat: string; lng: string }>({ lat: "", lng: "" });
   const [useManualPin, setUseManualPin] = useState(false);
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null);
+  const [pinAdjustmentConfirmed, setPinAdjustmentConfirmed] = useState(false);
 
   useEffect(() => {
     if (open && geo.status === "idle") {
@@ -72,6 +77,7 @@ export default function ReportSheet({
     if (adjustedPin) {
       setUseManualPin(true);
       setManualPin({ lat: String(adjustedPin.latitude), lng: String(adjustedPin.longitude) });
+      setPinAdjustmentConfirmed(false);
     }
   }, [adjustedPin]);
 
@@ -89,7 +95,7 @@ export default function ReportSheet({
     return null;
   }
 
-  const locationReady = Boolean(geo.position) || Boolean(manualCoordinates);
+  const locationReady = Boolean(sessionLocation) || Boolean(geo.position) || Boolean(manualCoordinates);
   const canSubmit = operator !== null && locationReady && isReady && submission.status !== "submitting";
 
   const handleSubmit = async () => {
@@ -97,15 +103,15 @@ export default function ReportSheet({
       return;
     }
 
-    const latitude = manualCoordinates?.latitude ?? geo.position?.coords.latitude ?? 0;
-    const longitude = manualCoordinates?.longitude ?? geo.position?.coords.longitude ?? 0;
-    const accuracyMeters = manualCoordinates ? null : Math.round(geo.position?.coords.accuracy ?? 0);
+    const latitude = manualCoordinates?.latitude ?? sessionLocation?.latitude ?? geo.position?.coords.latitude ?? 0;
+    const longitude = manualCoordinates?.longitude ?? sessionLocation?.longitude ?? geo.position?.coords.longitude ?? 0;
+    const accuracyMeters = manualCoordinates || sessionLocation ? null : Math.round(geo.position?.coords.accuracy ?? 0);
 
     const body: ReportSubmission = {
       latitude,
       longitude,
       accuracyMeters,
-      isManualPin: Boolean(manualCoordinates),
+      isManualPin: Boolean(manualCoordinates || sessionLocation),
       operator: operator as OperatorId,
       speed,
       deviceFingerprint: fingerprint,
@@ -123,6 +129,7 @@ export default function ReportSheet({
     setSpeed(null);
     setManualPin({ lat: "", lng: "" });
     setUseManualPin(false);
+    setPinAdjustmentConfirmed(false);
     onStopPinAdjustment();
     onClose();
   };
@@ -133,6 +140,7 @@ export default function ReportSheet({
       setManualPin({ lat: String(latitude), lng: String(longitude) });
       setUseManualPin(false);
     }
+    setPinAdjustmentConfirmed(false);
     onStopPinAdjustment();
   };
 
@@ -146,7 +154,10 @@ export default function ReportSheet({
         </div>
         <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] pointer-events-auto md:bottom-6 md:left-1/2 md:w-[400px] md:-translate-x-1/2 md:rounded-[28px]">
           <p className="text-sm font-bold text-gray-900">Confirm report location</p>
-          <p className="mt-1 text-xs text-gray-500">You can move the pin up to 2 km from your detected location.</p>
+          <p className="mt-1 text-xs text-gray-500">The blue location marker and report coordinates update as you move the red pin.</p>
+          <p className="mt-2 text-[11px] font-mono text-gray-500" aria-live="polite">
+            Selected: {adjustedPin.latitude.toFixed(5)}, {adjustedPin.longitude.toFixed(5)}
+          </p>
           <div className="mt-4 flex gap-3">
             <button
               type="button"
@@ -157,7 +168,11 @@ export default function ReportSheet({
             </button>
             <button
               type="button"
-              onClick={onStopPinAdjustment}
+              onClick={() => {
+                setPinAdjustmentConfirmed(true);
+                onConfirmPinAdjustment(adjustedPin);
+                onStopPinAdjustment();
+              }}
               className="flex-1 rounded-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-black"
             >
               Use this location
@@ -205,7 +220,13 @@ export default function ReportSheet({
                 <span className="text-[11px] text-gray-500 leading-tight">We store your location to place and verify this report. The public map shows only aggregated coverage data.</span>
               </div>
 
-              {geo.position && !useManualPin ? (
+              {sessionLocation && !useManualPin ? (
+                <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl">
+                  <p className="text-xs text-emerald-900 font-semibold mb-0.5">Adjusted session location</p>
+                  <p className="text-[11px] text-emerald-700">This corrected location is used for nearby sites and this report.</p>
+                  <p className="mt-1 text-[11px] text-emerald-700 font-mono">Lat: {sessionLocation.latitude.toFixed(5)}, Lng: {sessionLocation.longitude.toFixed(5)}</p>
+                </div>
+              ) : geo.position && !useManualPin ? (
                 <div className="p-3 bg-blue-50/70 border border-blue-100 rounded-xl space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-900">
@@ -233,7 +254,12 @@ export default function ReportSheet({
                 </div>
               ) : manualCoordinates ? (
                 <div className="p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl">
-                  <p className="text-xs text-emerald-900 font-semibold mb-0.5">Custom Pin Selected</p>
+                  <p className="text-xs text-emerald-900 font-semibold mb-0.5">
+                    {pinAdjustmentConfirmed ? "Adjusted location saved" : "Custom Pin Selected"}
+                  </p>
+                  {pinAdjustmentConfirmed && (
+                    <p className="text-[11px] text-emerald-700 mb-1">This location will be used when you submit the report.</p>
+                  )}
                   <p className="text-[11px] text-emerald-700 font-mono">
                     Lat: {manualCoordinates.latitude.toFixed(5)}, Lng: {manualCoordinates.longitude.toFixed(5)}
                   </p>
@@ -305,6 +331,7 @@ export default function ReportSheet({
                   <LocationSearchInput 
                     onSelect={(lat, lng, name) => {
                       onStopPinAdjustment();
+                      setPinAdjustmentConfirmed(false);
                       setManualPin({ lat, lng });
                     }}
                   />

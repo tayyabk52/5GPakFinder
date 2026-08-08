@@ -37,7 +37,6 @@ import { MapProviderContext } from "./MapProviderContext";
 import { MapLibreProvider } from "./providers/MapLibreProvider";
 import { NETWORKS, UNKNOWN_OPERATOR_COLOR } from "@/config/networks";
 import { SITE_ICONS } from "./siteIcon";
-import { haversineDistanceKm } from "@/lib/haversine";
 
 // Worker served from /public — see note above. Same-origin → loaded directly as
 // a module worker; the relative "./maplibre-gl-shared.mjs" import resolves fine.
@@ -81,7 +80,6 @@ const LAYER_CLUSTER = "clusters";
 const LAYER_CLUSTER_COUNT = "cluster-count";
 const LAYER_UNCLUSTERED = "unclustered-points";
 const MAX_MOBILE_LOCATION_ACCURACY_RADIUS_METERS = 100;
-const MAX_REPORT_PIN_DISTANCE_KM = 2;
 
 export interface ReportPin {
   latitude: number;
@@ -99,6 +97,7 @@ interface MapContainerProps {
   onMapReady?: (map: MapLibreMap) => void;
   reportPin?: ReportPin | null;
   onReportPinChange?: (pin: ReportPin) => void;
+  locationOverride?: { latitude: number; longitude: number } | null;
 }
 
 export default function MapContainer({
@@ -110,6 +109,7 @@ export default function MapContainer({
   onMapReady,
   reportPin = null,
   onReportPinChange,
+  locationOverride = null,
 }: MapContainerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -502,8 +502,10 @@ export default function MapContainer({
     const updateMarker = async () => {
       const maplibregl = await import("maplibre-gl");
 
-      if (userPosition) {
-        const { latitude, longitude, accuracy } = userPosition.coords;
+      if (userPosition || reportPin || locationOverride) {
+        const latitude = reportPin?.latitude ?? locationOverride?.latitude ?? userPosition!.coords.latitude;
+        const longitude = reportPin?.longitude ?? locationOverride?.longitude ?? userPosition!.coords.longitude;
+        const accuracy = reportPin ? 20 : userPosition!.coords.accuracy;
 
         if (userMarkerRef.current) {
           userMarkerRef.current.setLngLat([longitude, latitude]);
@@ -519,7 +521,8 @@ export default function MapContainer({
             .addTo(map);
         }
 
-        // Mobile devices can report a coarse GPS accuracy that overwhelms the map.
+        // An adjusted report location becomes the active blue location marker while editing.
+        // Otherwise mobile devices can report a coarse GPS accuracy that overwhelms the map.
         // Keep the full accuracy radius on larger screens while capping only its mobile display.
         const accuracyRadius = window.matchMedia("(max-width: 639px)").matches
           ? Math.min(accuracy || 20, MAX_MOBILE_LOCATION_ACCURACY_RADIUS_METERS)
@@ -569,7 +572,7 @@ export default function MapContainer({
     };
 
     updateMarker();
-  }, [userPosition, isMapReady]);
+  }, [userPosition, reportPin, locationOverride, isMapReady]);
 
   // ── Draggable report-location pin ─────────────────────────────────────
   useEffect(() => {
@@ -605,11 +608,6 @@ export default function MapContainer({
         if (!activePin) return;
 
         const { lat, lng } = marker.getLngLat();
-        const distance = haversineDistanceKm(activePin.originLatitude, activePin.originLongitude, lat, lng);
-        if (distance > MAX_REPORT_PIN_DISTANCE_KM) {
-          marker.setLngLat([activePin.originLongitude, activePin.originLatitude]);
-          return;
-        }
 
         onReportPinChangeRef.current?.({
           ...activePin,

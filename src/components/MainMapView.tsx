@@ -18,7 +18,7 @@ import type { CellSiteFeature } from "@/types/cell-site";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { useNetworkFilters } from "@/features/filters/useNetworkFilters";
 import { useGeolocation } from "@/features/geolocation/useGeolocation";
-import { useNearbySites } from "@/features/nearby-sites/useNearbySites";
+import { useNearbySites, type ActiveLocation } from "@/features/nearby-sites/useNearbySites";
 import { useSearch, type SearchResult } from "@/features/search/useSearch";
 import NetworkFilterBar from "@/features/filters/NetworkFilterBar";
 import SearchBar from "@/features/search/SearchBar";
@@ -53,6 +53,8 @@ export default function MainMapView() {
   const [coverageMap, setCoverageMap] = useState<MapLibreMap | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [reportPin, setReportPin] = useState<ReportPin | null>(null);
+  const [sessionLocation, setSessionLocation] = useState<ActiveLocation | null>(null);
+  const [isAdjustingLocation, setIsAdjustingLocation] = useState(false);
   const [heatmapMode, setHeatmapMode] = useState<HeatmapMode>("coverage");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [heatmapVisible] = useState(true);
@@ -64,7 +66,11 @@ export default function MainMapView() {
 
   const { activeNetworks, toggleNetwork } = useNetworkFilters();
   const geoState = useGeolocation();
-  const { nearbySites, isAvailable: hasLocation } = useNearbySites(allFeatures, geoState, activeNetworks);
+  const gpsLocation = useMemo<ActiveLocation | null>(() => geoState.position
+    ? { latitude: geoState.position.coords.latitude, longitude: geoState.position.coords.longitude }
+    : null, [geoState.position]);
+  const activeLocation = sessionLocation ?? gpsLocation;
+  const { nearbySites, isAvailable: hasLocation } = useNearbySites(allFeatures, activeLocation, activeNetworks);
   const { query, setQuery, results, isSearching, clearSearch } = useSearch(allFeatures);
   const { cells, refresh: refreshCells } = useCoverageCells(coverageMap, verifiedOnly);
 
@@ -75,6 +81,36 @@ export default function MainMapView() {
       geoState.requestLocation();
     }
   }, []);
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem("adjusted-map-location");
+    if (!saved) return;
+    try {
+      const location = JSON.parse(saved) as ActiveLocation;
+      if (Number.isFinite(location.latitude) && Number.isFinite(location.longitude)) {
+        setSessionLocation(location);
+      }
+    } catch {
+      sessionStorage.removeItem("adjusted-map-location");
+    }
+  }, []);
+
+  const saveSessionLocation = useCallback((pin: ReportPin) => {
+    const location = { latitude: pin.latitude, longitude: pin.longitude };
+    setSessionLocation(location);
+    sessionStorage.setItem("adjusted-map-location", JSON.stringify(location));
+  }, []);
+
+  const startLocationAdjustment = useCallback(() => {
+    if (!activeLocation) return;
+    setReportPin({
+      latitude: activeLocation.latitude,
+      longitude: activeLocation.longitude,
+      originLatitude: activeLocation.latitude,
+      originLongitude: activeLocation.longitude,
+    });
+    setIsAdjustingLocation(true);
+  }, [activeLocation]);
 
   const filterOp = useMemo(() => {
     if (activeNetworks.size === 1) {
@@ -137,8 +173,8 @@ export default function MainMapView() {
   }, [geoState]);
 
   const handleFlyToUser = useCallback(() => {
-    if (geoState.position) {
-      const { latitude, longitude } = geoState.position.coords;
+    if (activeLocation) {
+      const { latitude, longitude } = activeLocation;
       // We trigger via a side-channel: set a URL param that MapContainer watches
       const params = new URLSearchParams(searchParams.toString());
       params.set("lat", latitude.toFixed(6));
@@ -146,7 +182,7 @@ export default function MainMapView() {
       params.set("zoom", "13");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [geoState.position, searchParams, router, pathname]);
+  }, [activeLocation, searchParams, router, pathname]);
 
   const totalVisible = useMemo(() => {
     return allFeatures.filter((f) => activeNetworks.has(f.properties.provider)).length;
@@ -165,6 +201,7 @@ export default function MainMapView() {
           onMapReady={setCoverageMap}
           reportPin={reportPin}
           onReportPinChange={setReportPin}
+          locationOverride={sessionLocation}
         />
       </div>
 
@@ -190,6 +227,19 @@ export default function MainMapView() {
               onFlyToUser={handleFlyToUser}
             />
           </div>
+          {activeLocation && (
+            <button
+              type="button"
+              onClick={startLocationAdjustment}
+              aria-label="Adjust current location"
+              title="Adjust current location"
+              className="w-[48px] h-[48px] flex flex-shrink-0 items-center justify-center rounded-full bg-white text-gray-900 shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:bg-gray-50"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2m0 14v2M3 12h2m14 0h2M8 16l8-8M8 8h.01M16 16h.01" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Row 2: Overflowing Filter Chips */}
@@ -208,6 +258,21 @@ export default function MainMapView() {
           </div>
         </div>
       </div>
+
+      {isAdjustingLocation && reportPin && (
+        <div className="fixed inset-0 z-30 pointer-events-none">
+          <div className="absolute top-5 left-1/2 -translate-x-1/2 rounded-full bg-gray-900 px-4 py-2 text-center text-xs font-medium text-white shadow-lg">Drag the red pin to correct your location</div>
+          <div className="absolute bottom-0 left-0 right-0 rounded-t-[28px] bg-white p-5 shadow-[0_-10px_40px_rgba(0,0,0,0.2)] pointer-events-auto md:bottom-6 md:left-1/2 md:w-[400px] md:-translate-x-1/2 md:rounded-[28px]">
+            <p className="text-sm font-bold text-gray-900">Confirm current location</p>
+            <p className="mt-1 text-xs text-gray-500">Nearby sites and location-based features will use this point for this session.</p>
+            <p className="mt-2 text-[11px] font-mono text-gray-500" aria-live="polite">Selected: {reportPin.latitude.toFixed(5)}, {reportPin.longitude.toFixed(5)}</p>
+            <div className="mt-4 flex gap-3">
+              <button type="button" onClick={() => { setReportPin(null); setIsAdjustingLocation(false); }} className="flex-1 rounded-full border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button type="button" onClick={() => { saveSessionLocation(reportPin); setReportPin(null); setIsAdjustingLocation(false); }} className="flex-1 rounded-full bg-gray-900 px-4 py-3 text-sm font-semibold text-white hover:bg-black">Use this location</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Bottom controls container ────────────────────────────────────────── */}
       {/* 1. Layers & Legend controls (bottom right) */}
@@ -299,6 +364,8 @@ export default function MainMapView() {
           setReportPin({ latitude: originLatitude, longitude: originLongitude, originLatitude, originLongitude });
         }}
         onStopPinAdjustment={() => setReportPin(null)}
+        onConfirmPinAdjustment={saveSessionLocation}
+        sessionLocation={sessionLocation}
       />
     </div>
   );
