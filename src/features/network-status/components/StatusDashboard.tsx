@@ -29,13 +29,11 @@ function loadStoredLocation(): ReportLocation | null {
 
 function StatusMetric({ status, incident }: { status: keyof typeof signalStyle; incident?: IncidentSummary }) {
   const style = signalStyle[status];
-  const Icon = style.icon;
-  return <article className={`${style.surface} min-h-36 rounded-[1.5rem] p-4 sm:p-5`}>
+  return <article className={`${style.surface} min-h-32 rounded-[1.5rem] p-4 sm:min-h-36 sm:p-5`}>
     <div className="flex items-center justify-between">
-      <span className={`grid h-9 w-9 place-items-center rounded-2xl ${style.iconSurface} text-white shadow-sm`}><Icon size={18} strokeWidth={2.5} /></span>
-      <span className={`text-xs font-semibold ${style.text}`}>{style.label}</span>
+      <span className="flex items-center gap-2"><span aria-hidden className={`h-2.5 w-2.5 rounded-full ${style.iconSurface}`} /><span className={`text-xs font-semibold ${style.text}`}>{style.label}</span></span>
     </div>
-    <p className={`mt-5 text-3xl font-bold tracking-tight ${style.text}`}>{incident?.count ?? 0}</p>
+    <p className={`mt-6 text-3xl font-bold tracking-tight ${style.text}`}>{incident?.count ?? 0}</p>
     <p className={`mt-0.5 text-sm font-medium ${style.text}`}>affected area{incident?.count === 1 ? "" : "s"}</p>
   </article>;
 }
