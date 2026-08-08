@@ -37,6 +37,7 @@ import { MapProviderContext } from "./MapProviderContext";
 import { MapLibreProvider } from "./providers/MapLibreProvider";
 import { NETWORKS, UNKNOWN_OPERATOR_COLOR } from "@/config/networks";
 import { SITE_ICONS } from "./siteIcon";
+import { haversineDistanceKm } from "@/lib/haversine";
 
 // Worker served from /public — see note above. Same-origin → loaded directly as
 // a module worker; the relative "./maplibre-gl-shared.mjs" import resolves fine.
@@ -80,6 +81,14 @@ const LAYER_CLUSTER = "clusters";
 const LAYER_CLUSTER_COUNT = "cluster-count";
 const LAYER_UNCLUSTERED = "unclustered-points";
 const MAX_MOBILE_LOCATION_ACCURACY_RADIUS_METERS = 100;
+const MAX_REPORT_PIN_DISTANCE_KM = 2;
+
+export interface ReportPin {
+  latitude: number;
+  longitude: number;
+  originLatitude: number;
+  originLongitude: number;
+}
 
 interface MapContainerProps {
   onSiteSelect: (feature: CellSiteFeature | null) => void;
@@ -88,6 +97,8 @@ interface MapContainerProps {
   userPosition: GeolocationPosition | null;
   onFeaturesLoaded: (features: CellSiteFeature[]) => void;
   onMapReady?: (map: MapLibreMap) => void;
+  reportPin?: ReportPin | null;
+  onReportPinChange?: (pin: ReportPin) => void;
 }
 
 export default function MapContainer({
@@ -97,11 +108,14 @@ export default function MapContainer({
   userPosition,
   onFeaturesLoaded,
   onMapReady,
+  reportPin = null,
+  onReportPinChange,
 }: MapContainerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const providerRef = useRef<MapLibreProvider | null>(null);
   const userMarkerRef = useRef<Marker | null>(null);
+  const reportPinMarkerRef = useRef<Marker | null>(null);
   const allFeaturesRef = useRef<CellSiteFeature[]>([]);
   const dataRef = useRef<CellSiteFeatureCollection | null>(null);
 
@@ -126,6 +140,10 @@ export default function MapContainer({
   pathnameRef.current = pathname;
   const onMapReadyRef = useRef(onMapReady);
   onMapReadyRef.current = onMapReady;
+  const reportPinRef = useRef(reportPin);
+  reportPinRef.current = reportPin;
+  const onReportPinChangeRef = useRef(onReportPinChange);
+  onReportPinChangeRef.current = onReportPinChange;
 
   // ── Initialize MapLibre + load data (decoupled) ───────────────────────────────
   useEffect(() => {
@@ -552,6 +570,60 @@ export default function MapContainer({
 
     updateMarker();
   }, [userPosition, isMapReady]);
+
+  // ── Draggable report-location pin ─────────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !isMapReady) return;
+
+    const updateReportPin = async () => {
+      if (!reportPin) {
+        reportPinMarkerRef.current?.remove();
+        reportPinMarkerRef.current = null;
+        return;
+      }
+
+      if (reportPinMarkerRef.current) {
+        reportPinMarkerRef.current.setLngLat([reportPin.longitude, reportPin.latitude]);
+        return;
+      }
+
+      const maplibregl = await import("maplibre-gl");
+      if (!mapRef.current || !reportPinRef.current) return;
+
+      const element = document.createElement("div");
+      element.className = "report-location-marker";
+      element.setAttribute("aria-label", "Drag to adjust your report location");
+      element.setAttribute("role", "img");
+
+      const marker = new maplibregl.Marker({ element, draggable: true })
+        .setLngLat([reportPin.longitude, reportPin.latitude])
+        .addTo(map);
+
+      marker.on("dragend", () => {
+        const activePin = reportPinRef.current;
+        if (!activePin) return;
+
+        const { lat, lng } = marker.getLngLat();
+        const distance = haversineDistanceKm(activePin.originLatitude, activePin.originLongitude, lat, lng);
+        if (distance > MAX_REPORT_PIN_DISTANCE_KM) {
+          marker.setLngLat([activePin.originLongitude, activePin.originLatitude]);
+          return;
+        }
+
+        onReportPinChangeRef.current?.({
+          ...activePin,
+          latitude: lat,
+          longitude: lng,
+        });
+      });
+
+      reportPinMarkerRef.current = marker;
+      map.flyTo({ center: [reportPin.longitude, reportPin.latitude], zoom: Math.max(map.getZoom(), 16) });
+    };
+
+    void updateReportPin();
+  }, [reportPin, isMapReady]);
 
   return (
     <MapProviderContext.Provider value={{ mapProvider }}>

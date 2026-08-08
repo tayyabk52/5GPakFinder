@@ -8,18 +8,29 @@ import SpeedTestPanel from "@/features/coverage-reports/components/SpeedTestPane
 import SuccessCard from "@/features/coverage-reports/components/SuccessCard";
 import LocationSearchInput from "@/features/coverage-reports/components/LocationSearchInput";
 import type { OperatorId, ReportSubmission, SpeedSample } from "@/features/coverage-reports/types";
+import type { ReportPin } from "@/features/map/MapContainer";
 
 interface ReportSheetProps {
   open: boolean;
   onClose: () => void;
   onSubmitSuccess: () => void;
+  adjustedPin: ReportPin | null;
+  onStartPinAdjustment: (latitude: number, longitude: number) => void;
+  onStopPinAdjustment: () => void;
 }
 
 
 
 const OPERATORS: Array<OperatorId> = ["Jazz", "Zong", "Ufone"];
 
-export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSheetProps) {
+export default function ReportSheet({
+  open,
+  onClose,
+  onSubmitSuccess,
+  adjustedPin,
+  onStartPinAdjustment,
+  onStopPinAdjustment,
+}: ReportSheetProps) {
   const geo = useGeolocation();
   const { fingerprint, isReady } = useFingerprint();
   const submission = useReportSubmission();
@@ -56,6 +67,13 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
       };
     }
   }, [geo.position, useManualPin]);
+
+  useEffect(() => {
+    if (adjustedPin) {
+      setUseManualPin(true);
+      setManualPin({ lat: String(adjustedPin.latitude), lng: String(adjustedPin.longitude) });
+    }
+  }, [adjustedPin]);
 
   const manualCoordinates = useMemo(() => {
     const latitude = parseFloat(manualPin.lat);
@@ -105,6 +123,7 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
     setSpeed(null);
     setManualPin({ lat: "", lng: "" });
     setUseManualPin(false);
+    onStopPinAdjustment();
     onClose();
   };
 
@@ -189,7 +208,10 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
 
               <button
                 type="button"
-                onClick={() => setUseManualPin((value) => !value)}
+                onClick={() => {
+                  onStopPinAdjustment();
+                  setUseManualPin((value) => !value);
+                }}
                 className="mt-2 text-xs text-blue-600 hover:text-blue-700"
               >
                 {useManualPin ? "Use GPS location instead" : "Enter location manually"}
@@ -197,8 +219,36 @@ export default function ReportSheet({ open, onClose, onSubmitSuccess }: ReportSh
 
               {useManualPin && (
                 <div className="mt-2">
+                  {geo.position && (
+                    <div className="mb-2 rounded-lg bg-blue-50 border border-blue-100 p-2.5">
+                      <p className="text-xs text-blue-900 font-semibold">Need to correct the GPS point?</p>
+                      <p className="mt-0.5 text-[11px] text-blue-700">Drag the map pin to your exact location, up to 2 km from your detected position.</p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const { latitude, longitude } = geo.position!.coords;
+                          setManualPin({ lat: String(latitude), lng: String(longitude) });
+                          setUseManualPin(true);
+                          onStartPinAdjustment(latitude, longitude);
+                        }}
+                        className="mt-2 text-xs font-semibold text-blue-700 hover:text-blue-900"
+                      >
+                        {adjustedPin ? "Adjusting pin on map" : "Adjust pin on map"}
+                      </button>
+                      {adjustedPin && (
+                        <button
+                          type="button"
+                          onClick={onStopPinAdjustment}
+                          className="mt-2 ml-3 text-xs font-semibold text-gray-600 hover:text-gray-900"
+                        >
+                          Done adjusting
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <LocationSearchInput 
                     onSelect={(lat, lng, name) => {
+                      onStopPinAdjustment();
                       setManualPin({ lat, lng });
                     }}
                   />

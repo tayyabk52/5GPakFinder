@@ -107,6 +107,22 @@ html, body {
   cursor: default;
 }
 
+/* ── Draggable report location marker ─────────────────────────────────── */
+.report-location-marker {
+  width: 28px;
+  height: 28px;
+  border-radius: 50% 50% 50% 0;
+  background: #dc2626;
+  border: 3px solid #ffffff;
+  box-shadow: 0 3px 10px rgba(127, 29, 29, 0.45);
+  cursor: grab;
+  transform: rotate(-45deg);
+}
+
+.report-location-marker:active {
+  cursor: grabbing;
+}
+
 @keyframes user-location-pulse {
   0% {
     box-shadow:

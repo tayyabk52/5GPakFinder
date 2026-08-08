@@ -31,6 +31,7 @@ import ReportSheet from "@/features/coverage-reports/components/ReportSheet";
 import HeatmapLegend, { type HeatmapMode } from "@/features/coverage-reports/map/HeatmapLegend";
 import { useCoverageCells } from "@/features/coverage-reports/hooks/useCoverageCells";
 import { useCoverageHeatmap } from "@/features/coverage-reports/map/useCoverageHeatmap";
+import type { ReportPin } from "@/features/map/MapContainer";
 
 // Dynamic import: MapContainer is never SSR'd (MapLibre requires browser)
 const MapContainer = dynamic(() => import("@/features/map/MapContainer"), {
@@ -51,6 +52,7 @@ export default function MainMapView() {
   const [showNearby, setShowNearby] = useState(false);
   const [coverageMap, setCoverageMap] = useState<MapLibreMap | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [reportPin, setReportPin] = useState<ReportPin | null>(null);
   const [heatmapMode, setHeatmapMode] = useState<HeatmapMode>("coverage");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [heatmapVisible] = useState(true);
@@ -161,6 +163,8 @@ export default function MainMapView() {
           userPosition={geoState.position}
           onFeaturesLoaded={handleFeaturesLoaded}
           onMapReady={setCoverageMap}
+          reportPin={reportPin}
+          onReportPinChange={setReportPin}
         />
       </div>
 
@@ -285,8 +289,16 @@ export default function MainMapView() {
 
       <ReportSheet
         open={reportOpen}
-        onClose={() => setReportOpen(false)}
+        onClose={() => {
+          setReportPin(null);
+          setReportOpen(false);
+        }}
         onSubmitSuccess={refreshCells}
+        adjustedPin={reportPin}
+        onStartPinAdjustment={(originLatitude, originLongitude) => {
+          setReportPin({ latitude: originLatitude, longitude: originLongitude, originLatitude, originLongitude });
+        }}
+        onStopPinAdjustment={() => setReportPin(null)}
       />
     </div>
   );
