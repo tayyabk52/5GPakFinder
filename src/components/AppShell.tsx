@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, Bug, ChartNoAxesCombined, ChevronRight, House, Map, Menu, PanelLeftClose, X } from "lucide-react";
+import { Activity, BarChart3, Bug, ChartNoAxesCombined, ChevronRight, House, Lightbulb, Map, Menu, PanelLeftClose, X } from "lucide-react";
 import { useState } from "react";
 
 const items = [
@@ -13,6 +13,7 @@ const items = [
   { href: "/network-history", label: "History", icon: BarChart3 },
   { href: "/insights", label: "Insights", icon: ChartNoAxesCombined },
   { href: "/bug-report", label: "Bug Report", icon: Bug },
+  { href: "/suggestions", label: "Suggestions", icon: Lightbulb },
 ];
 
 function isActive(pathname: string, href: string) {

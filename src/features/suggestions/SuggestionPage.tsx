@@ -1,0 +1,32 @@
+"use client";
+
+import { useState } from "react";
+import { CheckCircle2, Lightbulb, Send, Sparkles } from "lucide-react";
+import { useFingerprint } from "@/features/coverage-reports/fingerprint/useFingerprint";
+
+const categories = [["map", "Map & locations"], ["coverage_data", "Coverage data"], ["network_status", "Network Status"], ["speed_test", "Speed tests"], ["insights", "Insights"], ["accessibility", "Accessibility"], ["other", "Other"]] as const;
+const audiences = [["me", "Helps me"], ["my_area", "Helps my area"], ["everyone", "Helps everyone"]] as const;
+const initial = { category: "map", audience: "everyone", title: "", problem: "", proposal: "" };
+
+export default function SuggestionPage() {
+  const [form, setForm] = useState(initial);
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { fingerprint, isReady } = useFingerprint();
+  const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!fingerprint || !isReady) return setMessage("Preparing anonymous spam protection. Try again in a moment.");
+    setSubmitting(true); setMessage("");
+    try {
+      const response = await fetch("/api/suggestions", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...form, pagePath: window.location.pathname, deviceFingerprint: fingerprint }) });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.reason || "Could not submit your suggestion.");
+      setForm(initial); setMessage("Suggestion received. It is now ready for our product review queue.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Could not submit your suggestion."); }
+    finally { setSubmitting(false); }
+  };
+  return <main className="h-full overflow-y-auto bg-[#f4f5f6] px-4 py-6 sm:px-6 sm:py-8 lg:px-10"><div className="mx-auto max-w-3xl pb-8"><section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-5 py-7 text-white shadow-[0_18px_45px_rgba(15,23,42,.12)] sm:px-8 sm:py-10"><div aria-hidden className="absolute -right-10 -top-16 h-44 w-44 rounded-full bg-[#77e8bd] opacity-75"/><div aria-hidden className="absolute -bottom-20 right-28 h-36 w-36 rounded-full bg-[#49cbeb] opacity-60"/><div className="relative"><p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold tracking-[.12em]"><Lightbulb size={14}/> FEATURE SUGGESTION</p><h1 className="mt-4 text-3xl font-bold tracking-[-.04em] sm:text-4xl">Help shape what 5GPak builds next.</h1><p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">Useful suggestions name a real problem and a simple outcome. We review structured requests together, so recurring needs are easier to spot.</p></div></section><div className="mt-4 grid gap-3 sm:grid-cols-3"><Tip icon={<Lightbulb size={17}/>} title="One idea" text="Keep each request focused."/><Tip icon={<Sparkles size={17}/>} title="Real need" text="Explain the situation it solves."/><Tip icon={<CheckCircle2 size={17}/>} title="No private data" text="Never include contact details."/></div><form onSubmit={submit} className="mt-4 rounded-[1.75rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-7"><div className="grid gap-5 sm:grid-cols-2"><Field label="Which area would improve?"><select value={form.category} onChange={(event) => update("category", event.target.value)} className="input">{categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field><Field label="Who would this help?"><div className="grid grid-cols-3 gap-2">{audiences.map(([value, label]) => <button key={value} type="button" onClick={() => update("audience", value)} className={`min-h-11 rounded-xl px-1 text-xs font-semibold transition ${form.audience === value ? "bg-slate-950 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"}`}>{label}</button>)}</div></Field></div><Field label="Suggestion title" hint="8–120 characters. Example: Compare operators in one selected area."><input required minLength={8} maxLength={120} value={form.title} onChange={(event) => update("title", event.target.value)} className="input" /></Field><Field label="What problem would this solve?" hint="Describe the current difficulty in at least 20 characters."><textarea required minLength={20} maxLength={1000} value={form.problem} onChange={(event) => update("problem", event.target.value)} className="input min-h-28 resize-y" /></Field><Field label="What would a useful solution look like?" hint="Describe the outcome, not personal information."><textarea required minLength={20} maxLength={2000} value={form.proposal} onChange={(event) => update("proposal", event.target.value)} className="input min-h-32 resize-y" /></Field><div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-slate-500">Anonymous, rate-limited submissions. Suggestions are reviewed as grouped themes, not public comments.</p><button disabled={submitting} className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60">{submitting ? <CheckCircle2 className="animate-pulse" size={17}/> : <Send size={16}/>} {submitting ? "Sending" : "Send suggestion"}</button></div><p aria-live="polite" className="mt-3 min-h-5 text-center text-sm text-slate-600">{message}</p></form></div></main>;
+}
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) { return <label className="mt-5 block text-sm font-semibold text-slate-800">{label}{hint && <span className="mt-1 block text-xs font-normal leading-5 text-slate-500">{hint}</span>}<span className="mt-2 block">{children}</span></label>; }
+function Tip({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <article className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200/70"><span className="grid h-8 w-8 place-items-center rounded-xl bg-[#bdebf6] text-slate-800">{icon}</span><h2 className="mt-3 text-sm font-bold">{title}</h2><p className="mt-1 text-xs leading-5 text-slate-500">{text}</p></article>; }
