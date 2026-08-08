@@ -18,3 +18,9 @@ export interface IncidentSummary {
   operator: NetworkOperator; status: IncidentStatus; count: number; medianDurationMinutes: number | null;
   totalAffectedMinutes: number; issueBreakdown: Partial<Record<IssueType, number>>;
 }
+export interface HistoryOverview {
+  incidentCount: number;
+  medianDurationMinutes: number | null;
+  totalAffectedMinutes: number;
+}
+export interface HistoryDay { day: string; incidentCount: number; }
