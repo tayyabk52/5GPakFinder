@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import { computeTrustScore } from "@/features/coverage-reports/trust/computeTrustScore";
 import type { SpeedSample } from "@/features/coverage-reports/types";
 
-const inApp: SpeedSample = { source: "mobile", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
+const inApp: SpeedSample = { source: "mobile", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: "https://www.speedtest.net/result/a/11797444683" };
 const manualLink: SpeedSample = { source: "manual", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: "https://www.speedtest.net/result/1" };
 const manualNoLink: SpeedSample = { source: "manual", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
-const wifiWithModel: SpeedSample = { source: "mobile", isWifi: true, wifiDeviceModel: "Router X", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
-const wifiNoModel: SpeedSample = { source: "desktop", isWifi: true, downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: null };
+const wifiWithModel: SpeedSample = { source: "mobile", isWifi: true, wifiDeviceModel: "Router X", downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: "https://www.speedtest.net/result/a/11797444683" };
+const wifiNoModel: SpeedSample = { source: "desktop", isWifi: true, downloadMbps: 120, uploadMbps: 20, pingMs: 20, speedtestUrl: "https://www.speedtest.net/result/123456789" };
 
 describe("computeTrustScore", () => {
   it("returns base 0.50 for a bare report with no speed and >100m accuracy", () => {
@@ -37,6 +37,18 @@ describe("computeTrustScore", () => {
   it("adds accuracy bonus and clamps to 1.0", () => {
     // 50 + 30 (in-app) + 20 (<30m) = 100 -> 1.0
     expect(computeTrustScore({ speed: inApp, accuracyMeters: 10, isManualPin: false, ipRegionFar: false })).toBeCloseTo(1, 5);
+  });
+
+  it("gives a fetched cellular result with an exact manual pin full trust", () => {
+    expect(computeTrustScore({ speed: inApp, accuracyMeters: null, isManualPin: true, ipRegionFar: false })).toBeCloseTo(1, 5);
+  });
+
+  it("keeps the distant-IP safeguard for fetched results with a manual pin", () => {
+    expect(computeTrustScore({ speed: inApp, accuracyMeters: null, isManualPin: true, ipRegionFar: true })).toBeCloseTo(0.8, 5);
+  });
+
+  it("does not treat a Wi-Fi result as exact cellular evidence", () => {
+    expect(computeTrustScore({ speed: wifiWithModel, accuracyMeters: null, isManualPin: true, ipRegionFar: false })).toBeCloseTo(0.65, 5);
   });
 
   it("subtracts for manual pin and clamps to >= 0", () => {

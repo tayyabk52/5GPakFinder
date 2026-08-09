@@ -56,6 +56,26 @@ describe("submitReport", () => {
     expect(repo.insertReport).not.toHaveBeenCalled();
   });
 
+  it("stores full trust for a fetched cellular result with an exact manual pin", async () => {
+    const repo = makeRepo();
+    const exactPin: ReportSubmission = {
+      ...submission,
+      accuracyMeters: null,
+      isManualPin: true,
+      speed: {
+        ...submission.speed!,
+        speedtestUrl: "https://www.speedtest.net/result/a/11797444683",
+      },
+    };
+
+    const res = await submitReport({ submission: exactPin, ipHash: "iphash", ipRegionFar: false, repository: repo });
+    expect(res.ok).toBe(true);
+    if (res.ok) expect(res.trustScore).toBe(1);
+
+    const row = (repo.insertReport as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(row.trust_score).toBe(1);
+  });
+
   it("keeps visible status for a weak but still allowed submission", async () => {
     const repo = makeRepo();
     const weak: ReportSubmission = { ...submission, speed: null, accuracyMeters: null, isManualPin: true };

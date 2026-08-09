@@ -107,7 +107,7 @@ begin
   select max(created_at) into last_ip_at from report_submissions_log where ip_hash = p_ip_hash;
 
   if ip_hour_count >= 5 or device_day_count >= 10 or
-     (last_ip_at is not null and last_ip_at > now() - interval '300 seconds') then
+     (last_ip_at is not null and last_ip_at > now() - interval '20 seconds') then
     insert into report_submission_violations (ip_hash, device_fingerprint, reason)
       values (p_ip_hash, p_fingerprint, 'rate_limit');
     select count(*) into violation_count from report_submission_violations
@@ -153,7 +153,7 @@ begin
   select max(created_at) into last_ip_at
     from report_submissions_log
     where ip_hash = p_ip_hash;
-  if last_ip_at is not null and last_ip_at > now() - interval '300 seconds' then
+  if last_ip_at is not null and last_ip_at > now() - interval '20 seconds' then
     return false;
   end if;
 

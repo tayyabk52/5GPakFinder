@@ -6,6 +6,7 @@ export const TRUST_MANUAL_WITH_LINK = 30;
 export const TRUST_MANUAL_NO_LINK = 18;
 export const TRUST_ACCURACY_UNDER_30M = 20;
 export const TRUST_ACCURACY_UNDER_100M = 10;
+export const TRUST_FETCHED_EXACT_PIN = 20;
 export const TRUST_MANUAL_PIN_PENALTY = -5;
 export const TRUST_IP_REGION_FAR_PENALTY = -20;
 
@@ -28,9 +29,16 @@ function speedPoints(speed: SpeedSample | null): number {
 }
 
 function accuracyPoints(input: TrustInput): number {
-  if (input.isManualPin || input.accuracyMeters === null) {
-    return input.isManualPin ? TRUST_MANUAL_PIN_PENALTY : 0;
+  if (input.isManualPin) {
+    // A manually adjusted pin is user-confirmed location evidence. Pair it with
+    // a fetched cellular result at the same weight as sub-30m device GPS.
+    const isFetchedCellularResult =
+      (input.speed?.source === "desktop" || input.speed?.source === "mobile") &&
+      Boolean(input.speed.speedtestUrl) &&
+      !input.speed.isWifi;
+    return isFetchedCellularResult ? TRUST_FETCHED_EXACT_PIN : TRUST_MANUAL_PIN_PENALTY;
   }
+  if (input.accuracyMeters === null) return 0;
   if (input.accuracyMeters < 30) return TRUST_ACCURACY_UNDER_30M;
   if (input.accuracyMeters <= 100) return TRUST_ACCURACY_UNDER_100M;
   return 0;
