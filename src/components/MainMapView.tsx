@@ -63,6 +63,7 @@ export default function MainMapView() {
   const [affectedVisible, setAffectedVisible] = useState(true);
   const [coverageGeneration, setCoverageGeneration] = useState<NetworkGeneration>("5g");
   const hasAutoCenteredOnLocation = useRef(false);
+  const hasRequestedInitialLocation = useRef(false);
   const centerAfterLocate = useRef(false);
   const mapRef = useState<{ flyTo: (f: CellSiteFeature) => void } | null>(null);
 
@@ -72,6 +73,7 @@ export default function MainMapView() {
 
   const { activeNetworks, toggleNetwork } = useNetworkFilters();
   const geoState = useGeolocation();
+  const requestLocation = geoState.requestLocation;
   const gpsLocation = useMemo<ActiveLocation | null>(() => geoState.position
     ? { latitude: geoState.position.coords.latitude, longitude: geoState.position.coords.longitude }
     : null, [geoState.position]);
@@ -80,13 +82,11 @@ export default function MainMapView() {
   const { query, setQuery, results, isSearching, clearSearch } = useSearch(allFeatures);
   const { cells, refresh: refreshCells } = useCoverageCells(coverageMap, verifiedOnly, coverageGeneration);
 
-  // Auto-fetch location on initialization
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (geoState.status === "idle") {
-      geoState.requestLocation();
-    }
-  }, []);
+    if (hasRequestedInitialLocation.current) return;
+    hasRequestedInitialLocation.current = true;
+    requestLocation();
+  }, [requestLocation]);
 
   useEffect(() => {
     const saved = sessionStorage.getItem("adjusted-map-location");
@@ -221,8 +221,8 @@ export default function MainMapView() {
       return;
     }
     centerAfterLocate.current = true;
-    geoState.requestLocation();
-  }, [activeLocation, centerOnLocation, coverageMap, geoState]);
+    requestLocation();
+  }, [activeLocation, centerOnLocation, coverageMap, requestLocation]);
 
   useEffect(() => {
     if (!centerAfterLocate.current || !activeLocation || !coverageMap) return;
@@ -368,7 +368,7 @@ export default function MainMapView() {
       </div>
 
       {/* ── Geolocation error message ─────────────────────────────────────────── */}
-      {geoState.errorMessage && (
+      {geoState.errorMessage && geoState.status !== "denied" && (
         <div
           role="status"
           aria-live="polite"

@@ -72,7 +72,7 @@ export default function LocateMeButton({ status, onLocate, onFlyToUser }: Locate
       </button>
 
       {/* Error tooltip */}
-      {isError && (
+      {isError && status !== "denied" && (
         <div
           role="status"
           aria-live="polite"

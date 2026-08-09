@@ -82,13 +82,13 @@ export function useGeolocation(): UseGeolocationReturn {
         let status: GeolocationStatus = "error";
         if (error.code === GeolocationPositionError.PERMISSION_DENIED) {
           status = "denied";
-          msg = "Location access was denied. Enable it in your browser settings.";
+          msg = "Location access was denied. You can still browse all cell sites; enable location in your browser settings for nearby features.";
         } else if (error.code === GeolocationPositionError.TIMEOUT) {
           status = "timeout";
           msg = "Location request timed out. Please try again.";
         } else if (error.code === GeolocationPositionError.POSITION_UNAVAILABLE) {
           status = "unavailable";
-          msg = "Your location could not be determined.";
+          msg = "Your location could not be determined. You can still browse all cell sites.";
         }
         return { status, position: null, accuracy: null, errorMessage: msg };
       });
