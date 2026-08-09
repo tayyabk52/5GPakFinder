@@ -92,22 +92,22 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
   };
 
   return (
-    <div className="rounded-lg border border-gray-200 p-3">
-      <div className="flex items-center gap-1.5 mb-2">
-        <span className="text-sm font-medium text-gray-800">Speed data (optional)</span>
+    <div className="rounded-lg border border-gray-200 p-2.5 sm:p-3">
+      <div className="mb-1.5 flex items-center gap-1.5 sm:mb-2">
+        <span className="text-xs font-medium text-gray-800 sm:text-sm">Speed data (optional)</span>
         <InfoTooltip
           label="Speed test"
           text="Paste your Speedtest.net public result link to instantly populate the speed and ping values."
         />
       </div>
 
-      <div className="flex gap-2 mb-2">
+      <div className="mb-1.5 flex gap-1.5 sm:mb-2 sm:gap-2">
         <button
           type="button"
           onClick={() => {
             setMode("fetch");
           }}
-          className={`flex-1 px-3 py-2 text-sm rounded-lg border ${mode === "fetch" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200"}`}
+          className={`min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-xs leading-4 sm:px-3 sm:py-2 sm:text-sm ${mode === "fetch" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200"}`}
         >
           Paste Speedtest Link
         </button>
@@ -119,7 +119,7 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
               onChange(null); // Reset if they are switching mode and previous was fetched
             }
           }}
-          className={`flex-1 px-3 py-2 text-sm rounded-lg border ${mode === "manual" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200"}`}
+          className={`min-w-0 flex-1 rounded-lg border px-2 py-1.5 text-xs leading-4 sm:px-3 sm:py-2 sm:text-sm ${mode === "manual" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-100 text-gray-700 border-transparent hover:bg-gray-200"}`}
         >
           Enter Manually
         </button>
@@ -128,31 +128,31 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
       {mode === "fetch" && (
         <div className="space-y-2 mt-2">
           {!value || (value.source === "manual" && !value.speedtestUrl) ? (
-            <div className="flex gap-2">
+            <div className="flex gap-1.5 sm:gap-2">
               <input
                 type="url"
                 placeholder="e.g. https://www.speedtest.net/result/12345678"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
-                className="flex-1 px-2 py-1.5 text-sm border border-gray-200 rounded-lg"
+                className="min-w-0 flex-1 rounded-lg border border-gray-200 px-2 py-1.5 text-xs sm:text-sm"
               />
               <button
                 type="button"
                 onClick={handleFetch}
                 disabled={fetching || !urlInput.trim()}
-                className="px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60 whitespace-nowrap"
+                className="whitespace-nowrap rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-60 sm:px-3 sm:text-sm"
               >
                 {fetching ? "Fetching..." : "Fetch"}
               </button>
             </div>
           ) : (
-            <div className="text-sm rounded border border-green-200 bg-green-50 p-2 text-green-900 relative">
-              <button type="button" onClick={() => onChange(null)} className="absolute top-2 right-2 text-green-700 hover:text-green-900 text-xs">Clear</button>
-              <div className="font-medium text-green-800 mb-1">Results Found</div>
-              <div>Download {value.downloadMbps} Mbps | Upload {value.uploadMbps} Mbps | {value.pingMs} ms</div>
-              {value.speedtestUrl && <div className="text-xs mt-1 truncate opacity-75">{value.speedtestUrl}</div>}
+            <div className="relative rounded border border-green-200 bg-green-50 p-2 text-xs text-green-900 sm:text-sm">
+              <button type="button" onClick={() => onChange(null)} className="absolute right-2 top-2 text-[11px] text-green-700 hover:text-green-900 sm:text-xs">Clear</button>
+              <div className="mb-1 pr-10 text-xs font-medium text-green-800 sm:text-sm">Results Found</div>
+              <div className="pr-1 text-[11px] leading-4 sm:text-xs">Download {value.downloadMbps} Mbps | Upload {value.uploadMbps} Mbps | {value.pingMs} ms</div>
+              {value.speedtestUrl && <div className="mt-1 truncate text-[10px] opacity-75 sm:text-xs">{value.speedtestUrl}</div>}
               
-              <div className="mt-2 text-xs text-green-700 bg-white/50 p-2 rounded border border-green-200/50">
+              <div className="mt-1.5 rounded border border-green-200/50 bg-white/50 p-1.5 text-[10px] text-green-700 sm:mt-2 sm:p-2 sm:text-xs">
                 <div className="flex justify-between py-0.5 border-b border-green-100"><span className="opacity-75">Carrier</span><span className="font-medium">{value.carrier || "N/A"}</span></div>
                 <div className="flex justify-between py-0.5 border-b border-green-100"><span className="opacity-75">ISP</span><span className="font-medium">{value.isp || "N/A"}</span></div>
                 <div className="flex justify-between py-0.5"><span className="opacity-75">Device</span><span className="font-medium">{value.deviceModel || "N/A"}</span></div>
@@ -184,14 +184,14 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
 
       {mode === "manual" && (
         <div className="space-y-2 mt-2">
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             <input
               type="number"
               inputMode="decimal"
               placeholder="Download Mbps"
               aria-label="Download Mbps"
               value={value?.downloadMbps !== null ? value?.downloadMbps : ""}
-              className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg"
+              className="min-w-0 rounded-lg border border-gray-200 px-1.5 py-1.5 text-[11px] sm:px-2 sm:text-sm"
               onChange={(event) => setManual({ downloadMbps: event.target.value ? Number(event.target.value) : null })}
             />
             <input
@@ -200,7 +200,7 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
               placeholder="Upload Mbps"
               aria-label="Upload Mbps"
               value={value?.uploadMbps !== null ? value?.uploadMbps : ""}
-              className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg"
+              className="min-w-0 rounded-lg border border-gray-200 px-1.5 py-1.5 text-[11px] sm:px-2 sm:text-sm"
               onChange={(event) => setManual({ uploadMbps: event.target.value ? Number(event.target.value) : null })}
             />
             <input
@@ -209,7 +209,7 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
               placeholder="ms"
               aria-label="Ping ms"
               value={value?.pingMs !== null ? value?.pingMs : ""}
-              className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg"
+              className="min-w-0 rounded-lg border border-gray-200 px-1.5 py-1.5 text-[11px] sm:px-2 sm:text-sm"
               onChange={(event) => setManual({ pingMs: event.target.value ? Number(event.target.value) : null })}
             />
           </div>

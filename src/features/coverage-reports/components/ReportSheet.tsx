@@ -187,23 +187,23 @@ export default function ReportSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-40">
+    <div className="fixed inset-x-0 bottom-0 top-[4.25rem] z-40 lg:inset-0">
       <div className="map-backdrop-enter absolute inset-0 bg-black/10" onClick={handleClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Report coverage and speed"
-        className="map-sheet-enter absolute bottom-0 left-0 right-0 md:bottom-6 md:left-auto md:right-6 md:w-[400px] rounded-t-[32px] md:rounded-[32px] bg-white shadow-[0_-10px_60px_rgba(0,0,0,0.15)] md:shadow-[0_20px_60px_rgba(0,0,0,0.15)] max-h-[90vh] overflow-y-auto"
+        className="map-sheet-enter absolute bottom-0 left-0 right-0 max-h-full overflow-y-auto rounded-t-[24px] bg-white shadow-[0_-10px_60px_rgba(0,0,0,0.15)] md:bottom-6 md:left-auto md:right-6 md:w-[400px] md:rounded-[28px] md:shadow-[0_20px_60px_rgba(0,0,0,0.15)] lg:max-h-[90vh]"
       >
         {submission.status === "success" && submission.result ? (
           <div className="p-6">
             <SuccessCard result={submission.result} onReportAnother={() => submission.reset()} onClose={handleClose} />
           </div>
         ) : (
-          <div className="p-7">
-            <div className="flex items-start justify-between mb-6">
+          <div className="p-4 sm:p-6 md:p-7">
+            <div className="mb-4 flex items-start justify-between sm:mb-6">
               <div>
-                <h2 className="text-gray-900 text-lg font-bold tracking-tight">Report coverage & speed</h2>
+                <h2 className="text-base font-bold tracking-tight text-gray-900 sm:text-lg">Report coverage & speed</h2>
                 <p className="text-xs text-gray-500 mt-0.5">No account needed — we check reports so fake ones do not fill the map.</p>
               </div>
               <button
@@ -217,7 +217,7 @@ export default function ReportSheet({
               </button>
             </div>
 
-            <div className="mb-4">
+            <div className="mb-3 sm:mb-4">
               <div className="flex flex-col gap-0.5 mb-2">
                 <span className="text-sm font-medium text-gray-800">Your location</span>
                 <span className="text-[11px] text-gray-500 leading-tight">We store your location to place and verify this report. The public map shows only aggregated coverage data.</span>
@@ -347,15 +347,15 @@ export default function ReportSheet({
               )}
             </div>
 
-            <div className="mb-4">
-              <span className="text-sm font-medium text-gray-800 block mb-1.5">Operator (Required)</span>
-              <div className="flex gap-2 flex-wrap">
+            <div className="mb-3 sm:mb-4">
+              <span className="mb-1.5 block text-xs font-medium text-gray-800 sm:text-sm">Operator (Required)</span>
+              <div className="flex flex-wrap gap-1.5 sm:gap-2">
                 {OPERATORS.map((network) => (
                   <button
                     key={network}
                     onClick={() => setOperator(network)}
                     className={[
-                      "px-4 py-2 text-[13px] rounded-full font-bold transition-all shadow-[0_4px_14px_rgba(0,0,0,0.06)]",
+                      "rounded-full px-3 py-1.5 text-xs font-bold transition-all shadow-[0_4px_14px_rgba(0,0,0,0.06)] sm:px-4 sm:py-2 sm:text-[13px]",
                       operator === network
                         ? "bg-gray-900 text-white shadow-[0_8px_30px_rgba(0,0,0,0.12)] scale-100"
                         : "bg-white text-gray-500 hover:bg-gray-50 hover:text-gray-900 scale-95 hover:scale-100",
@@ -367,15 +367,15 @@ export default function ReportSheet({
               </div>
             </div>
 
-            <div className="mb-5">
-              <span className="text-sm font-medium text-gray-800 block mb-1.5">Connection technology</span>
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-gray-100 p-1.5">
-                {(["5g", "4g"] as const).map((generation) => <button key={generation} type="button" onClick={() => setNetworkGeneration(generation)} aria-pressed={networkGeneration === generation} className={`min-h-11 rounded-lg px-3 text-sm font-bold transition ${networkGeneration === generation ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{generation === "5g" ? "5G" : "4G LTE"}</button>)}
+            <div className="mb-4 sm:mb-5">
+              <span className="mb-1.5 block text-xs font-medium text-gray-800 sm:text-sm">Connection technology</span>
+              <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-gray-100 p-1 sm:gap-2 sm:p-1.5">
+                {(["5g", "4g"] as const).map((generation) => <button key={generation} type="button" onClick={() => setNetworkGeneration(generation)} aria-pressed={networkGeneration === generation} className={`min-h-9 rounded-lg px-2 text-xs font-bold transition sm:min-h-11 sm:px-3 sm:text-sm ${networkGeneration === generation ? "bg-gray-900 text-white shadow-sm" : "text-gray-500 hover:text-gray-900"}`}>{generation === "5g" ? "5G" : "4G LTE"}</button>)}
               </div>
-              <p className="mt-2 text-[11px] leading-4 text-gray-500">Choose the network shown on your phone. LTE reports are stored separately and never change 5G speed or coverage results.</p>
+              <p className="mt-1.5 text-[10px] leading-4 text-gray-500 sm:mt-2 sm:text-[11px]">Choose the network shown on your phone. LTE reports are stored separately and never change 5G speed or coverage results.</p>
             </div>
 
-            <div className="mb-5">
+            <div className="mb-4 sm:mb-5">
               <SpeedTestPanel 
                 value={speed} 
                 onChange={(s) => {
@@ -400,7 +400,7 @@ export default function ReportSheet({
             <button
               onClick={() => void handleSubmit()}
               disabled={!canSubmit}
-              className="w-full px-5 py-4 mt-2 text-[15px] font-bold rounded-full bg-gray-900 text-white hover:bg-black shadow-[0_12px_40px_rgba(0,0,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="mt-1 w-full rounded-full bg-gray-900 px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_24px_rgba(0,0,0,0.18)] transition-all hover:bg-black disabled:cursor-not-allowed disabled:opacity-50 sm:mt-2 sm:px-5 sm:py-3.5 sm:text-[15px] sm:shadow-[0_12px_40px_rgba(0,0,0,0.2)]"
             >
               {submission.status === "submitting" ? "Submitting…" : "Submit report"}
             </button>
