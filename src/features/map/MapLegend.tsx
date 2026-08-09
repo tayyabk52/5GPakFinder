@@ -74,7 +74,7 @@ export default function MapLegend() {
 
           <div className="mt-2.5 pt-2.5 border-t border-gray-100">
             <p className="text-xs text-gray-500 leading-relaxed">
-              Coordinates from official provider maps. Not independently surveyed tower positions.
+              Cell-site locations are estimates compiled from official operator pages. They are not independently surveyed, and errors or changes are possible.
             </p>
           </div>
         </div>

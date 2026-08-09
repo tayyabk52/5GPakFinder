@@ -259,6 +259,28 @@ html, body {
   display: none;
 }
 
+/* Keep desktop navigation usable on short laptop screens without allowing the
+   fixed sidebar to overflow the viewport. */
+.app-sidebar-nav {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+.app-sidebar-nav::-webkit-scrollbar {
+  width: 5px;
+}
+
+.app-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.55);
+  border-radius: 999px;
+}
+
+@media (max-height: 700px) and (min-width: 1024px) {
+  .app-sidebar-nav {
+    margin-top: 1.25rem;
+  }
+}
+
 /* ── Safe area padding utilities ──────────────────────────────────────── */
 .safe-area-inset-top {
   padding-top: max(0.75rem, env(safe-area-inset-top));
