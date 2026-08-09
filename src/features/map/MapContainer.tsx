@@ -30,7 +30,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { Map as MapLibreMap, Marker, GeoJSONSource, MapMouseEvent, MapLibreEvent, FilterSpecification, ExpressionSpecification, StyleSpecification } from "maplibre-gl";
 import type { CellSiteFeature, CellSiteFeatureCollection } from "@/types/cell-site";
 import { MapProviderContext } from "./MapProviderContext";
@@ -124,8 +124,6 @@ export default function MapContainer({
   const [loadError, setLoadError] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
 
   // Stable refs for callbacks
   const onSiteSelectRef = useRef(onSiteSelect);
@@ -134,10 +132,6 @@ export default function MapContainer({
   onFeaturesLoadedRef.current = onFeaturesLoaded;
   const searchParamsRef = useRef(searchParams);
   searchParamsRef.current = searchParams;
-  const routerRef = useRef(router);
-  routerRef.current = router;
-  const pathnameRef = useRef(pathname);
-  pathnameRef.current = pathname;
   const onMapReadyRef = useRef(onMapReady);
   onMapReadyRef.current = onMapReady;
   const reportPinRef = useRef(reportPin);
@@ -308,10 +302,6 @@ export default function MapContainer({
         );
         if (matchingFeature) {
           onSiteSelectRef.current(matchingFeature);
-          const currentParams = searchParamsRef.current;
-          const newParams = new URLSearchParams(currentParams.toString());
-          newParams.set("site", matchingFeature.properties.site_uid);
-          routerRef.current.replace(`${pathnameRef.current}?${newParams.toString()}`, { scroll: false });
         }
       });
 
@@ -483,12 +473,14 @@ export default function MapContainer({
     if (!isNaN(lat) && !isNaN(lng)) {
       const currentCenter = map.getCenter();
       const currentZoom = map.getZoom();
+      const targetZoom = !isNaN(zoom) ? zoom : currentZoom;
       const latDiff = Math.abs(currentCenter.lat - lat);
       const lngDiff = Math.abs(currentCenter.lng - lng);
-      if (latDiff > 0.001 || lngDiff > 0.001) {
+      const zoomDiff = Math.abs(currentZoom - targetZoom);
+      if (latDiff > 0.001 || lngDiff > 0.001 || zoomDiff > 0.01) {
         map.flyTo({
           center: [lng, lat],
-          zoom: !isNaN(zoom) ? zoom : currentZoom,
+          zoom: targetZoom,
           speed: 1.4,
         });
       }

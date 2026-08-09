@@ -32,6 +32,7 @@ import HeatmapLegend, { type HeatmapMode } from "@/features/coverage-reports/map
 import { useCoverageCells } from "@/features/coverage-reports/hooks/useCoverageCells";
 import { useCoverageHeatmap } from "@/features/coverage-reports/map/useCoverageHeatmap";
 import type { ReportPin } from "@/features/map/MapContainer";
+import { siteTargetSearchParams } from "@/features/map/siteNavigation";
 import { useAffectedAreas } from "@/features/network-status/map/useAffectedAreas";
 import type { NetworkGeneration } from "@/features/coverage-reports/types";
 
@@ -173,13 +174,15 @@ export default function MainMapView() {
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleSiteSelect = useCallback((feature: CellSiteFeature | null) => {
     setSelectedSite(feature);
-    if (!feature) {
-      // Clear site URL param
-      const params = new URLSearchParams(searchParams.toString());
+    if (feature) {
+      const params = siteTargetSearchParams(searchParams, feature, coverageMap?.getZoom());
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    } else {
+      const params = new URLSearchParams(searchParams);
       params.delete("site");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, router, pathname]);
+  }, [coverageMap, pathname, router, searchParams]);
 
   const handleFeaturesLoaded = useCallback((features: CellSiteFeature[]) => {
     setAllFeatures(features);
@@ -187,11 +190,7 @@ export default function MainMapView() {
 
   const handleSearchResult = useCallback((result: SearchResult) => {
     if (result.type === "cell-site") {
-      const feature = result.feature;
-      setSelectedSite(feature);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("site", feature.properties.site_uid);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      handleSiteSelect(result.feature);
     } else {
       // It's a geocoded location
       const coords = result.feature.geometry.coordinates; // [lon, lat]
@@ -201,7 +200,7 @@ export default function MainMapView() {
       params.set("zoom", "15");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, router, pathname]);
+  }, [handleSiteSelect, pathname, router, searchParams]);
 
   const centerOnLocation = useCallback((location: ActiveLocation) => {
     if (!coverageMap) return;
