@@ -272,8 +272,18 @@ export default function ReportSheet({
                   onClick={() => geo.requestLocation()}
                   className="w-full px-3 py-2 text-sm rounded-lg bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200"
                 >
-                  {geo.status === "requesting" ? "Locating…" : "Allow location access"}
+                  {geo.status === "requesting"
+                    ? "Locating…"
+                    : geo.status === "denied"
+                      ? "Try location again"
+                      : "Allow location access"}
                 </button>
+              )}
+
+              {geo.status === "denied" && !manualCoordinates && !sessionLocation && (
+                <p role="status" className="mt-1.5 text-[11px] leading-4 text-amber-700">
+                  Location is blocked in your browser. Open this site&apos;s settings, allow Location, then tap Try location again, or enter your location manually.
+                </p>
               )}
 
               <button

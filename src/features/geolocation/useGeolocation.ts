@@ -82,7 +82,7 @@ export function useGeolocation(): UseGeolocationReturn {
         let status: GeolocationStatus = "error";
         if (error.code === GeolocationPositionError.PERMISSION_DENIED) {
           status = "denied";
-          msg = "Location access was denied. You can still browse all cell sites; enable location in your browser settings for nearby features.";
+          msg = "Location is blocked for this site. Allow it in your browser's site settings, then try again.";
         } else if (error.code === GeolocationPositionError.TIMEOUT) {
           status = "timeout";
           msg = "Location request timed out. Please try again.";

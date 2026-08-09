@@ -4,6 +4,7 @@
  * LocateMeButton — triggers geolocation and flies to user's position.
  */
 
+import { useEffect, useState } from "react";
 import type { GeolocationStatus } from "@/features/geolocation/useGeolocation";
 
 interface LocateMeButtonProps {
@@ -13,6 +14,7 @@ interface LocateMeButtonProps {
 }
 
 export default function LocateMeButton({ status, onLocate, onFlyToUser }: LocateMeButtonProps) {
+  const [showDeniedHelp, setShowDeniedHelp] = useState(false);
   const isLoading = status === "requesting";
   const isGranted = status === "granted";
   const isError = status === "denied" || status === "unavailable" || status === "error" || status === "timeout";
@@ -21,15 +23,22 @@ export default function LocateMeButton({ status, onLocate, onFlyToUser }: Locate
     if (isGranted) {
       onFlyToUser();
     } else {
+      setShowDeniedHelp(status === "denied");
       onLocate();
     }
   };
+
+  useEffect(() => {
+    if (!showDeniedHelp) return;
+    const timeoutId = window.setTimeout(() => setShowDeniedHelp(false), 7000);
+    return () => window.clearTimeout(timeoutId);
+  }, [showDeniedHelp]);
 
   const labelMap: Record<GeolocationStatus, string> = {
     idle: "Find my location",
     requesting: "Locating…",
     granted: "Center on my location",
-    denied: "Location access denied",
+    denied: "Location blocked — tap for help",
     unavailable: "Location unavailable",
     timeout: "Location timed out — tap to retry",
     error: "Location error — tap to retry",
@@ -72,13 +81,15 @@ export default function LocateMeButton({ status, onLocate, onFlyToUser }: Locate
       </button>
 
       {/* Error tooltip */}
-      {isError && status !== "denied" && (
+      {isError && (status !== "denied" || showDeniedHelp) && (
         <div
           role="status"
           aria-live="polite"
-          className="absolute bottom-full right-0 mb-2 px-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-red-600 whitespace-nowrap shadow-xl"
+          className="absolute right-0 top-full mt-2 w-64 rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-xs leading-4 text-red-600 shadow-xl"
         >
-          {labelMap[status]}
+          {status === "denied"
+            ? "Location is blocked. Open this site's browser settings, allow Location, then tap this button again."
+            : labelMap[status]}
         </div>
       )}
     </div>
