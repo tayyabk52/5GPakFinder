@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import InfoTooltip from "@/features/coverage-reports/components/InfoTooltip";
-import type { SpeedSample } from "@/features/coverage-reports/types";
+import type { SpeedSample, SpeedSource } from "@/features/coverage-reports/types";
 
 interface SpeedTestPanelProps {
   value: SpeedSample | null;
@@ -10,6 +10,26 @@ interface SpeedTestPanelProps {
 }
 
 type Mode = "none" | "fetch" | "manual";
+type SpeedtestResolveResponse =
+  | { ok: true; data: ResolvedSpeedtestData }
+  | { ok: false; reason?: string };
+
+interface ResolvedSpeedtestData {
+  source: SpeedSource;
+  downloadMbps: number | null;
+  uploadMbps: number | null;
+  pingMs: number | null;
+  resultUrl: string;
+  deviceModel?: string | null;
+  carrier?: string | null;
+  isp?: string | null;
+  serverName?: string | null;
+  isWifi?: boolean;
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "An error occurred";
+}
 
 export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps) {
   const [mode, setMode] = useState<Mode>(
@@ -46,25 +66,26 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: urlInput }),
       });
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.reason || "Failed to fetch speedtest data");
+      const json = (await res.json()) as SpeedtestResolveResponse;
+      if (!res.ok || !json.ok) {
+        throw new Error(!json.ok ? json.reason || "Failed to fetch speedtest data" : "Failed to fetch speedtest data");
       }
+      const data = json.data;
       onChange({
-        source: json.data.source as any,
-        downloadMbps: json.data.downloadMbps,
-        uploadMbps: json.data.uploadMbps,
-        pingMs: json.data.pingMs,
-        speedtestUrl: json.data.resultUrl,
-        deviceModel: json.data.deviceModel,
-        carrier: json.data.carrier,
-        isp: json.data.isp,
-        serverName: json.data.serverName,
-        isWifi: json.data.isWifi,
+        source: data.source,
+        downloadMbps: data.downloadMbps,
+        uploadMbps: data.uploadMbps,
+        pingMs: data.pingMs,
+        speedtestUrl: data.resultUrl,
+        deviceModel: data.deviceModel,
+        carrier: data.carrier,
+        isp: data.isp,
+        serverName: data.serverName,
+        isWifi: data.isWifi,
         wifiDeviceModel: null,
       });
-    } catch (error: any) {
-      setErrorMsg(error.message || "An error occurred");
+    } catch (error) {
+      setErrorMsg(errorMessage(error));
     } finally {
       setFetching(false);
     }
@@ -128,7 +149,7 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
             <div className="text-sm rounded border border-green-200 bg-green-50 p-2 text-green-900 relative">
               <button type="button" onClick={() => onChange(null)} className="absolute top-2 right-2 text-green-700 hover:text-green-900 text-xs">Clear</button>
               <div className="font-medium text-green-800 mb-1">Results Found</div>
-              <div>↓ {value.downloadMbps} Mbps · ↑ {value.uploadMbps} Mbps · {value.pingMs} ms</div>
+              <div>Download {value.downloadMbps} Mbps | Upload {value.uploadMbps} Mbps | {value.pingMs} ms</div>
               {value.speedtestUrl && <div className="text-xs mt-1 truncate opacity-75">{value.speedtestUrl}</div>}
               
               <div className="mt-2 text-xs text-green-700 bg-white/50 p-2 rounded border border-green-200/50">
@@ -167,7 +188,7 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
             <input
               type="number"
               inputMode="decimal"
-              placeholder="↓ Mbps"
+              placeholder="Download Mbps"
               aria-label="Download Mbps"
               value={value?.downloadMbps !== null ? value?.downloadMbps : ""}
               className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg"
@@ -176,7 +197,7 @@ export default function SpeedTestPanel({ value, onChange }: SpeedTestPanelProps)
             <input
               type="number"
               inputMode="decimal"
-              placeholder="↑ Mbps"
+              placeholder="Upload Mbps"
               aria-label="Upload Mbps"
               value={value?.uploadMbps !== null ? value?.uploadMbps : ""}
               className="px-2 py-1.5 text-sm border border-gray-200 rounded-lg"

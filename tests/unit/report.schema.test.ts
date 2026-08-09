@@ -35,6 +35,16 @@ describe("ReportSubmissionSchema", () => {
     expect(ReportSubmissionSchema.parse({ ...base, speed }).speed?.downloadMbps).toBe(140);
   });
 
+  it.each([
+    "https://www.speedtest.net/my-result/a/11797444683",
+    "https://www.speedtest.net/result/a/11797444683",
+    "https://www.speedtest.net/my-result/i/123456789",
+    "https://www.speedtest.net/result/i/123456789",
+  ])("accepts fetched mobile Speedtest URL %s", (speedtestUrl) => {
+    const speed = { source: "mobile", downloadMbps: 175, uploadMbps: 42, pingMs: 18, speedtestUrl };
+    expect(ReportSubmissionSchema.parse({ ...base, speed }).speed?.speedtestUrl).toBe(speedtestUrl);
+  });
+
   it("rejects a null operator", () => {
     expect(() => ReportSubmissionSchema.parse({ ...base, operator: null })).toThrow();
   });

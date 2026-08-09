@@ -2,27 +2,40 @@ import { NextResponse } from "next/server";
 import { isTrustedMutationRequest } from "@/server/security/request";
 import { consumeSpeedtestBudget } from "@/server/security/speedtest";
 
-const SPEEDTEST_RESULT_RE =
-  /^https:\/\/(?:www\.)?speedtest\.net\/result\/(i\/)?(\d+)\/?$/i;
+const SPEEDTEST_DESKTOP_RESULT_RE =
+  /^https:\/\/(?:www\.)?speedtest\.net\/result\/(\d+)\/?$/i;
+const SPEEDTEST_MOBILE_RESULT_RE =
+  /^https:\/\/(?:www\.)?speedtest\.net\/(?:result|my-result)\/([ai])\/(\d+)\/?$/i;
 
 export const runtime = "nodejs";
 const MAX_BODY_BYTES = 2 * 1024;
 
 function parseSpeedtestUrl(input: string) {
   const url = String(input || "").trim();
-  const m = url.match(SPEEDTEST_RESULT_RE);
-  if (!m) {
-    throw new Error("INVALID_SPEEDTEST_URL");
+  const desktopMatch = url.match(SPEEDTEST_DESKTOP_RESULT_RE);
+  if (desktopMatch) {
+    const id = desktopMatch[1];
+    return {
+      id,
+      isMobile: false,
+      publicUrl: url,
+      apiUrl: `https://www.speedtest.net/api/result/${id}`,
+    };
   }
 
-  const isMobile = Boolean(m[1]); // "i/" present
-  const id = m[2];
+  const mobileMatch = url.match(SPEEDTEST_MOBILE_RESULT_RE);
+  if (mobileMatch) {
+    const platform = mobileMatch[1].toLowerCase() as "a" | "i";
+    const id = mobileMatch[2];
+    return {
+      id,
+      isMobile: true,
+      publicUrl: url,
+      apiUrl: `https://www.speedtest.net/api/result/${platform}/${id}`,
+    };
+  }
 
-  const apiUrl = isMobile
-    ? `https://www.speedtest.net/api/result/i/${id}`
-    : `https://www.speedtest.net/api/result/${id}`;
-
-  return { id, isMobile, publicUrl: url, apiUrl };
+  throw new Error("INVALID_SPEEDTEST_URL");
 }
 
 type SpeedtestPayload = Record<string, unknown>;

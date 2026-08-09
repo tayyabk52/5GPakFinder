@@ -19,7 +19,7 @@ const speedSchema = z.object({
   }
 
   if ((speed.source === "desktop" || speed.source === "mobile") &&
-      (!speed.speedtestUrl || !/^https:\/\/(?:www\.)?speedtest\.net\/result\/(?:i\/)?\d+\/?$/i.test(speed.speedtestUrl))) {
+      (!speed.speedtestUrl || !/^https:\/\/(?:www\.)?speedtest\.net\/(?:result\/\d+|(?:result|my-result)\/[ai]\/\d+)\/?$/i.test(speed.speedtestUrl))) {
     context.addIssue({ code: "custom", message: "Fetched results require a valid Speedtest result URL." });
   }
 });
