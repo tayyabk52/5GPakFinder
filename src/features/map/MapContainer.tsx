@@ -4,7 +4,7 @@
  * MapContainer — the primary interactive map component.
  *
  * Responsibilities:
- * - Initializes MapLibre GL JS with CartoDB Positron (light) raster tiles
+ * - Initializes MapLibre GL JS with the OpenFreeMap Positron vector style
  * - Loads the GeoJSON dataset from /data/sites.geojson
  * - Renders Jazz and Zong sites as native MapLibre clustered layers
  * - Handles marker click → site selection
@@ -13,13 +13,11 @@
  * - Handles URL-based site selection (?site=jazz-0042)
  * - Handles URL-based map position (?lat=...&lng=...&zoom=...)
  *
- * Why a raster style object?
- * The GL JSON style was failing under Next.js/Turbopack because the map worker
- * could not be resolved (maplibre derives its default worker URL from
- * import.meta.url, which points at a bundle chunk — the sibling worker file is
- * never emitted). A same-origin worker URL is served from /workers/ and set via
- * setWorkerUrl() before the map is created; the raster style is used as a
- * lightweight, dependency-free basemap.
+ * Why a hosted vector style?
+ * OpenFreeMap provides a keyless Positron basemap that works with MapLibre. A
+ * same-origin worker URL is served from /workers/ and set via setWorkerUrl()
+ * before the map is created so both vector and GeoJSON sources are processed
+ * reliably under Next.js/Turbopack.
  *
  * Data-loading design:
  * The GeoJSON is fetched on mount, INDEPENDENTLY of the map lifecycle, so the
@@ -31,7 +29,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import type { Map as MapLibreMap, Marker, GeoJSONSource, MapMouseEvent, MapLibreEvent, FilterSpecification, ExpressionSpecification, StyleSpecification } from "maplibre-gl";
+import type { Map as MapLibreMap, Marker, GeoJSONSource, MapMouseEvent, MapLibreEvent, FilterSpecification, ExpressionSpecification } from "maplibre-gl";
 import type { CellSiteFeature, CellSiteFeatureCollection } from "@/types/cell-site";
 import { MapProviderContext } from "./MapProviderContext";
 import { MapLibreProvider } from "./providers/MapLibreProvider";
@@ -42,33 +40,7 @@ import { SITE_ICONS } from "./siteIcon";
 // a module worker; the relative "./maplibre-gl-shared.mjs" import resolves fine.
 const WORKER_URL = "/workers/maplibre-gl-worker.mjs";
 
-// CartoDB Positron (light) raster style object — instant, dependency-free basemap.
-const CARTO_LIGHT_RASTER_STYLE: StyleSpecification = {
-  version: 8,
-  name: "CartoDB Positron",
-  sources: {
-    "carto-light": {
-      type: "raster",
-      tiles: [
-        "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-        "https://d.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
-      ],
-      tileSize: 256,
-      attribution: "© CartoDB · © OpenStreetMap · Jazz/Zong (provider data)",
-    },
-  },
-  layers: [
-    {
-      id: "carto-light-tiles",
-      type: "raster",
-      source: "carto-light",
-      minzoom: 0,
-      maxzoom: 19,
-    }
-  ]
-};
+const BASEMAP_STYLE_URL = "https://tiles.openfreemap.org/styles/positron?v=20260828";
 
 // Pakistan center
 const DEFAULT_CENTER: [number, number] = [69.3451, 30.3753];
@@ -240,6 +212,7 @@ export default function MapContainer({
           filter: ["has", "point_count"],
           layout: {
             "text-field": "{point_count_abbreviated}",
+            "text-font": ["Noto Sans Regular"],
             "text-size": 13,
           },
           paint: {
@@ -372,7 +345,7 @@ export default function MapContainer({
 
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
-        style: CARTO_LIGHT_RASTER_STYLE,
+        style: BASEMAP_STYLE_URL,
         center,
         zoom,
         minZoom: 3,
@@ -386,7 +359,7 @@ export default function MapContainer({
       map.addControl(
         new maplibregl.AttributionControl({
           compact: true,
-          customAttribution: "© CartoDB · © OpenStreetMap · Jazz/Zong (provider data)",
+          customAttribution: "Jazz/Zong (provider data)",
         }),
         "bottom-left"
       );

@@ -159,7 +159,7 @@ export function useAffectedAreas(map: MapLibreMap | null, visible: boolean, oper
           layout: {
             "text-field": ["to-string", ["get", "count"]],
             "text-size": 11,
-            "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+            "text-font": ["Noto Sans Bold"],
             "text-allow-overlap": false,
             "text-ignore-placement": false,
           },
