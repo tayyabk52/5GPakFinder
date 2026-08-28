@@ -1,0 +1,13 @@
+{
+  "datasetVersion": "reddit-pakistani-tech-2026-08-28-v1",
+  "source": "r/PakistaniTech posts supplied as CSV",
+  "sourcePostCount": 83,
+  "sourceDateFrom": "2026-03-08T00:58:04+00:00",
+  "sourceDateTo": "2026-08-16T18:27:33+00:00",
+  "sourceSha256": "5E0CB879BAD15490BBE770321686B0D49606F048CDDEE8D72C917863C41E66E3",
+  "inventorySha256": "92DE53C0784CD036A6F575C7F927CC4C58C4C08CBC5FC326BD5B1B607344F1F3",
+  "generatedAt": "2026-08-28T00:00:00+05:00",
+  "collectionMethod": "Imported from the supplied CSV. The original collection transport and authorization record were not supplied.",
+  "reviewMethod": "Deterministic first pass; ambiguous comparisons, missing metrics, anomalous OCR, and non-cellular rows are not approved.",
+  "locationMethod": "Source coordinates where explicitly stated; otherwise reviewed representative landmark, area, or city centroids. These are not device GPS positions."
+}

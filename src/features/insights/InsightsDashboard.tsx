@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ArrowDownToLine, BarChart3, CircleAlert, Gauge, MapPinned, RadioTower, ShieldCheck, Timer, type LucideIcon } from "lucide-react";
 import type { NetworkGeneration } from "@/features/coverage-reports/types";
+import RedditInsightsPanel from "@/features/reddit-speedtests/components/RedditInsightsPanel";
 
 type OperatorInsight = { operator: string; reportCount: number; speedSampleCount: number; averageDownload: number | null; averageUpload: number | null; averagePing: number | null };
 type CityInsight = { city: string; reportCount: number; speedSampleCount: number; averageDownload: number | null; averageUpload: number | null; averagePing: number | null; lastReportAt: string | null };
@@ -20,9 +22,13 @@ function evidence(count: number) {
 }
 
 export default function InsightsDashboard() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const source = searchParams.get("source") === "reddit" ? "reddit" : "5gpak";
   const [data, setData] = useState<Insights | null>(null);
   const [error, setError] = useState("");
-  const [generation, setGeneration] = useState<NetworkGeneration>("5g");
+  const [generation, setGeneration] = useState<NetworkGeneration>(searchParams.get("generation") === "4g" ? "4g" : "5g");
   const technology = generation === "5g" ? "5G" : "4G LTE";
   const accent = generation === "5g" ? "bg-[#49cbeb]" : "bg-[#e5a936]";
   const activeTab = generation === "5g" ? "bg-[#bdebf6] text-slate-950" : "bg-[#fff0cf] text-slate-950";
@@ -48,29 +54,41 @@ export default function InsightsDashboard() {
   }, [generation]);
 
   const maxDownload = useMemo(() => Math.max(1, ...(data?.operators.map((item) => item.averageDownload ?? 0) ?? [0])), [data]);
+  const updateView = (nextSource: "5gpak" | "reddit", nextGeneration = generation) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("source", nextSource);
+    params.set("generation", nextGeneration);
+    router.replace(`${pathname}?${params}`, { scroll: false });
+    setGeneration(nextGeneration);
+  };
 
   return (
     <main className="h-full overflow-y-auto bg-[#f4f5f6] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
       <div className="mx-auto max-w-6xl pb-8">
-        <section className="relative overflow-hidden rounded-[2rem] bg-[#1d1d1d] px-5 py-7 text-white shadow-[0_18px_45px_rgba(15,23,42,.12)] sm:px-8 sm:py-10">
-          <div aria-hidden className="absolute -right-14 top-0 h-48 w-48 rounded-full bg-[#49cbeb] opacity-80" />
-          <div aria-hidden className="absolute -bottom-24 right-28 h-48 w-48 rounded-full bg-[#77e8bd] opacity-60" />
-          <div className="relative max-w-2xl">
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold tracking-[.12em] text-white/90"><BarChart3 size={14} /> COVERAGE INSIGHTS</p>
-            <h1 className="mt-4 text-3xl font-bold tracking-[-.04em] sm:text-4xl">See how the network feels, city by city.</h1>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300 sm:text-base">A privacy-preserving view of community coverage reports and optional measured speeds.</p>
+        <section className={`border-l-4 bg-white px-5 py-6 shadow-sm ${source === "reddit" ? "border-[#FF4500]" : "border-[#49cbeb]"} sm:px-8 sm:py-8`}>
+          <div className="max-w-3xl">
+            <p className="inline-flex items-center gap-2 text-xs font-bold uppercase text-slate-500"><BarChart3 size={14} /> {source === "reddit" ? "Independent Reddit sample" : "Coverage insights"}</p>
+            <h1 className="mt-3 text-2xl font-bold text-slate-950 sm:text-3xl">{source === "reddit" ? "Community speed tests, kept separate and traceable." : "See how the network feels, city by city."}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">{source === "reddit" ? "A curated r/PakistaniTech snapshot with reviewed measurements, sample sizes, evidence, and honest location precision." : "A privacy-preserving view of community coverage reports and optional measured speeds."}</p>
             <div className="mt-5 flex flex-wrap items-center gap-3">
-              <div className="inline-flex rounded-xl bg-white/10 p-1" role="tablist" aria-label="Coverage technology">
+              <div className="inline-flex bg-slate-100 p-1" role="tablist" aria-label="Coverage technology">
                 {(["5g", "4g"] as const).map((item) => (
-                  <button key={item} type="button" role="tab" aria-selected={generation === item} onClick={() => setGeneration(item)} className={`min-h-9 rounded-lg px-3 text-xs font-bold transition ${generation === item ? activeTab : "text-white/70 hover:text-white"}`}>
+                  <button key={item} type="button" role="tab" aria-selected={generation === item} onClick={() => updateView(source, item)} className={`min-h-10 px-3 text-xs font-bold transition ${generation === item ? activeTab : "text-slate-600 hover:bg-white"}`}>
                     {item === "5g" ? "5G insights" : "4G LTE insights"}
                   </button>
                 ))}
               </div>
-              <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${generation === "5g" ? "bg-[#49cbeb]/20 text-[#bdebf6]" : "bg-[#f7c96e]/20 text-[#fff0cf]"}`}>Showing {technology} community reports only</span>
+              <span className={`px-3 py-2 text-xs font-semibold ${source === "reddit" ? "bg-orange-50 text-[#9b2c00]" : generation === "5g" ? "bg-[#e7f7fc] text-[#176177]" : "bg-[#fff0cf] text-[#744b00]"}`}>Showing {technology} {source === "reddit" ? "Reddit samples" : "community reports"} only</span>
             </div>
           </div>
         </section>
+
+        <nav aria-label="Insight data source" className="mt-4 grid grid-cols-2 border border-slate-300 bg-white p-1">
+          <button type="button" onClick={() => updateView("5gpak")} aria-current={source === "5gpak" ? "page" : undefined} className={`min-h-11 px-3 text-sm font-bold ${source === "5gpak" ? "bg-slate-950 text-white" : "text-slate-600 hover:bg-slate-100"}`}>5GPak reports</button>
+          <button type="button" onClick={() => updateView("reddit")} aria-current={source === "reddit" ? "page" : undefined} className={`min-h-11 px-3 text-sm font-bold ${source === "reddit" ? "bg-[#FF4500] text-white" : "text-slate-600 hover:bg-orange-50"}`}>Reddit sample</button>
+        </nav>
+
+        {source === "reddit" ? <RedditInsightsPanel generation={generation} /> : <>
 
         {error && <div role="alert" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">{error}</div>}
 
@@ -90,6 +108,7 @@ export default function InsightsDashboard() {
         </div>
 
         <section className="mt-4 rounded-[1.75rem] bg-white p-5 shadow-sm ring-1 ring-slate-200/70 sm:p-6"><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end"><div><p className="text-xs font-bold tracking-[.14em] text-slate-500">{technology} CITY SNAPSHOTS</p><h2 className="mt-1 text-xl font-bold tracking-tight">Community {technology} samples in major cities</h2><p className="mt-1 text-sm text-slate-600">These are local {technology} report samples, not population-wide rankings or operator promises.</p></div><span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600">3+ reports unlock metrics</span></div><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{data?.cities.map((city) => <CityCard key={city.city} city={city} />) ?? <Empty text={`Loading ${technology} city snapshots...`} />}</div></section>
+        </>}
       </div>
     </main>
   );

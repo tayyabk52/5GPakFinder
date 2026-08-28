@@ -35,6 +35,9 @@ import type { ReportPin } from "@/features/map/MapContainer";
 import { siteTargetSearchParams } from "@/features/map/siteNavigation";
 import { useAffectedAreas } from "@/features/network-status/map/useAffectedAreas";
 import type { NetworkGeneration } from "@/features/coverage-reports/types";
+import { useRedditSpeedLayer } from "@/features/reddit-speedtests/map/useRedditSpeedLayer";
+import type { RedditMapProperties } from "@/features/reddit-speedtests/types";
+import { ExternalLink, X } from "lucide-react";
 
 // Dynamic import: MapContainer is never SSR'd (MapLibre requires browser)
 const MapContainer = dynamic(() => import("@/features/map/MapContainer"), {
@@ -63,6 +66,10 @@ export default function MainMapView() {
   const [heatmapVisible, setHeatmapVisible] = useState(true);
   const [affectedVisible, setAffectedVisible] = useState(true);
   const [coverageGeneration, setCoverageGeneration] = useState<NetworkGeneration>("5g");
+  const [redditVisible, setRedditVisible] = useState(true);
+  const [redditGeneration, setRedditGeneration] = useState<NetworkGeneration>("5g");
+  const [redditNetwork, setRedditNetwork] = useState("");
+  const [selectedRedditSample, setSelectedRedditSample] = useState<RedditMapProperties | null>(null);
   const hasAutoCenteredOnLocation = useRef(false);
   const hasRequestedInitialLocation = useRef(false);
   const centerAfterLocate = useRef(false);
@@ -157,6 +164,8 @@ export default function MainMapView() {
 
   useCoverageHeatmap({ map: coverageMap, cells, mode: heatmapMode, visible: heatmapVisible, filterOp });
   useAffectedAreas(coverageMap, affectedVisible, filterOp);
+  const selectRedditSample = useCallback((item: RedditMapProperties | null) => setSelectedRedditSample(item), []);
+  useRedditSpeedLayer({ map: coverageMap, visible: redditVisible, generation: redditGeneration, network: redditNetwork, onSelect: selectRedditSample });
 
   // ── Site counts per network ───────────────────────────────────────────────────
   const siteCounts = useMemo(() => {
@@ -326,7 +335,9 @@ export default function MainMapView() {
           <summary className="cursor-pointer font-semibold text-slate-700">Layers</summary>
           <label className="mt-3 flex items-center gap-2"><input type="checkbox" checked={heatmapVisible} onChange={(e) => setHeatmapVisible(e.target.checked)} /> Coverage</label>
           <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={affectedVisible} onChange={(e) => setAffectedVisible(e.target.checked)} /> Affected areas</label>
+          <label className="mt-2 flex items-center gap-2"><input type="checkbox" checked={redditVisible} onChange={(e) => setRedditVisible(e.target.checked)} /><span className="inline-block h-3 w-3 border-2 border-white bg-[#FF4500] ring-1 ring-slate-800"/> Reddit speed tests</label>
           <label className="mt-3 block text-xs font-semibold text-slate-600">Coverage technology<select aria-label="Coverage technology" value={coverageGeneration} onChange={(event) => setCoverageGeneration(event.target.value as NetworkGeneration)} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-800"><option value="5g">5G coverage & speeds</option><option value="4g">4G LTE coverage & speeds</option></select></label>
+          {redditVisible && <><label className="mt-3 block text-xs font-semibold text-slate-600">Reddit technology<select aria-label="Reddit sample technology" value={redditGeneration} onChange={(event) => setRedditGeneration(event.target.value as NetworkGeneration)} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-800"><option value="5g">5G samples</option><option value="4g">4G / 4G+ samples</option></select></label><label className="mt-2 block text-xs font-semibold text-slate-600">Reddit operator<select aria-label="Reddit sample operator" value={redditNetwork} onChange={(event) => setRedditNetwork(event.target.value)} className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm font-medium text-slate-800"><option value="">All operators</option><option>Jazz</option><option>Zong</option><option>Ufone / Onic</option><option>Telenor</option><option>SCO</option></select></label></>}
         </details>
         {/* Nearby toggle (only when location is available) */}
         {hasLocation && (
@@ -360,6 +371,8 @@ export default function MainMapView() {
         />
         <MapLegend />
       </div>
+
+      {selectedRedditSample && <aside className="absolute bottom-0 left-0 right-0 z-40 max-h-[58vh] overflow-y-auto border-t-4 border-[#FF4500] bg-white p-4 shadow-2xl md:bottom-4 md:left-auto md:right-4 md:w-96 md:border md:border-t-4" aria-label="Reddit speed-test details"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase text-[#b83200]">Independent Reddit sample</p><h2 className="mt-1 font-bold text-slate-950">{selectedRedditSample.reportedBrand} {selectedRedditSample.generation.toUpperCase()}</h2></div><button onClick={() => setSelectedRedditSample(null)} className="grid h-10 w-10 place-items-center border border-slate-200" aria-label="Close sample details"><X size={18}/></button></div><div className="mt-4 grid grid-cols-3 gap-px bg-slate-200 text-center"><div className="bg-slate-50 p-3"><strong className="font-mono text-lg">{Math.round(selectedRedditSample.downloadMbps)}</strong><p className="text-[11px] text-slate-500">Mbps down</p></div><div className="bg-slate-50 p-3"><strong className="font-mono text-lg">{selectedRedditSample.uploadMbps == null ? "-" : Math.round(selectedRedditSample.uploadMbps)}</strong><p className="text-[11px] text-slate-500">Mbps up</p></div><div className="bg-slate-50 p-3"><strong className="font-mono text-lg">{selectedRedditSample.pingMs == null ? "-" : Math.round(selectedRedditSample.pingMs)}</strong><p className="text-[11px] text-slate-500">ms ping</p></div></div><p className="mt-4 text-sm font-semibold text-slate-900">{[selectedRedditSample.area, selectedRedditSample.city].filter(Boolean).join(", ") || "Location not stated"}</p><p className="mt-1 text-xs leading-5 text-slate-600">Best-known placement: {selectedRedditSample.locationMethod.replaceAll("_", " ")} ({selectedRedditSample.locationConfidence} precision). This is not asserted as the device GPS position.</p><p className="mt-2 text-xs text-slate-500">Evidence: {selectedRedditSample.metricsSource.replaceAll("_", " ")} · {selectedRedditSample.extractionConfidence} confidence</p><a href={`/insights/reddit-speedtests/${selectedRedditSample.postId}`} className="mt-4 inline-flex min-h-11 items-center gap-2 bg-slate-950 px-4 text-sm font-bold text-white">View full record <ExternalLink size={15}/></a></aside>}
 
       {/* 2. Floating Action Button (bottom center) */}
       <div className="absolute bottom-4 sm:bottom-7 left-1/2 -translate-x-1/2 z-20 safe-area-inset-bottom">
