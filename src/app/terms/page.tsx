@@ -1,6 +1,11 @@
 import { LegalLayout, LegalList, LegalSection } from "@/components/LegalDocument";
+import { createPageMetadata } from "@/lib/seo";
 
-export const metadata = { title: "Terms of Use | 5GPak" };
+export const metadata = createPageMetadata({
+  title: "Terms of Use",
+  description: "Terms governing access to 5GPak and its Pakistan mobile-network maps, community reports, status signals, and independent data samples.",
+  path: "/terms",
+});
 
 export default function TermsPage() {
   return <LegalLayout eyebrow="LEGAL" title="Terms of Use" intro="These terms govern access to and use of 5GPak. By using the platform or submitting a report, you agree to these terms.">

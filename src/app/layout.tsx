@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
+import { DEFAULT_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -12,19 +13,35 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "5GPak — Pakistan 5G Coverage & Network Status",
-  description: "Pakistan's community 5G coverage map and network-status companion for Jazz, Zong, and Ufone / Onic.",
-  keywords: ["Pakistan 5G", "Jazz 5G", "Zong 5G", "Pakistan telecom", "5G coverage map"],
-  authors: [{ name: "5GPak" }],
+  metadataBase: SITE_URL,
+  title: {
+    default: "Pakistan 5G Coverage Map & Network Status | 5GPak",
+    template: "%s | 5GPak",
+  },
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "technology",
+  formatDetection: { address: false, email: false, telephone: false },
   openGraph: {
-    title: "5GPak",
-    description: "Pakistan 5G coverage and community network status.",
+    title: "Pakistan 5G Coverage Map & Network Status",
+    description: DEFAULT_DESCRIPTION,
     type: "website",
+    locale: "en_PK",
+    siteName: SITE_NAME,
+    url: "/",
   },
   twitter: {
-    card: "summary",
-    title: "5GPak",
-    description: "Pakistan 5G coverage and community network status.",
+    card: "summary_large_image",
+    title: "Pakistan 5G Coverage Map & Network Status",
+    description: DEFAULT_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
 };
 

@@ -1,12 +1,20 @@
-import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import RedditEmbed from "@/features/reddit-speedtests/components/RedditEmbed";
 import { getRedditObservation } from "@/server/reddit-speedtests/repository";
+import { createPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Reddit Sample Record | 5GPak", robots: { index: false, follow: true } };
+export async function generateMetadata({ params }: { params: Promise<{ postId: string }> }) {
+  const { postId } = await params;
+  return createPageMetadata({
+    title: "Reddit Speed-Test Evidence Record",
+    description: "Review the extraction, source evidence, confidence, and map-placement notes for this Pakistani mobile speed-test sample.",
+    path: `/insights/reddit-speedtests/${postId}`,
+    index: false,
+  });
+}
 export default async function RecordPage({ params }: { params: Promise<{ postId: string }> }) {
   const { postId } = await params;
   if (!/^[a-z0-9]+$/.test(postId)) notFound();

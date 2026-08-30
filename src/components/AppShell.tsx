@@ -31,7 +31,7 @@ function Brand({ collapsed = false, compact = false }: { collapsed?: boolean; co
 
 function LegalLinks({ collapsed = false, onNavigate }: { collapsed?: boolean; onNavigate?: () => void }) {
   if (collapsed) return <div className="flex flex-col items-center gap-1"><Link href="/privacy" onClick={onNavigate} title="Privacy Policy" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"><ShieldCheck size={16}/></Link><Link href="/terms" onClick={onNavigate} title="Terms of Use" className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-950"><ScrollText size={16}/></Link></div>;
-  return <div className="mt-3 flex items-center gap-3 text-xs font-semibold text-slate-500"><Link href="/privacy" onClick={onNavigate} className="transition hover:text-slate-950">Privacy</Link><Link href="/terms" onClick={onNavigate} className="transition hover:text-slate-950">Terms</Link></div>;
+  return <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs font-semibold text-slate-500"><Link href="/about" onClick={onNavigate} className="transition hover:text-slate-950">About</Link><Link href="/methodology" onClick={onNavigate} className="transition hover:text-slate-950">Methodology</Link><Link href="/privacy" onClick={onNavigate} className="transition hover:text-slate-950">Privacy</Link><Link href="/terms" onClick={onNavigate} className="transition hover:text-slate-950">Terms</Link></div>;
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
