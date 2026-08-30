@@ -26,6 +26,7 @@
     "@supabase/supabase-js": "^2.112.2",
     "@tanstack/react-table": "^9.2.3",
     "@vercel/analytics": "^2.0.1",
+    "@vercel/speed-insights": "^2.0.0",
     "csv-parse": "^7.0.2",
     "lucide-react": "^1.30.0",
     "lucide-static": "^1.30.0",

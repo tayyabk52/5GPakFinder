@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
 import AppShell from "@/components/AppShell";
@@ -62,6 +63,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <body className={`${inter.variable} bg-gray-50 font-sans text-gray-900 antialiased`}>
       <AppShell>{children}</AppShell>
       <Analytics />
+      <SpeedInsights />
     </body>
   </html>;
 }
