@@ -243,7 +243,10 @@ export default function MainMapView() {
   }, [allFeatures, activeNetworks]);
 
   return (
-    <div className="relative h-[calc(100dvh-4rem)] w-full overflow-hidden bg-gray-50 lg:h-dvh">
+    <div
+      data-testid="main-map-view"
+      className="relative h-full min-h-0 w-full overflow-hidden bg-gray-50"
+    >
       {/* ── Full-screen map ─────────────────────────────────────────────────── */}
       <div className="absolute inset-0">
         <MapContainer
