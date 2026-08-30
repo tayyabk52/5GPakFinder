@@ -3,12 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, Bug, ChartNoAxesCombined, ChevronRight, House, Lightbulb, Map, Menu, PanelLeftClose, ScrollText, ShieldCheck, X } from "lucide-react";
+import { Activity, BarChart3, Bug, ChartNoAxesCombined, ChevronRight, Database, House, Lightbulb, Map, Menu, PanelLeftClose, ScrollText, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 
 const items = [
   { href: "/", label: "Home", icon: House },
   { href: "/map", label: "Map", icon: Map },
+  { href: "/coverage", label: "Coverage", icon: Database },
   { href: "/network-status", label: "Network status", icon: Activity },
   { href: "/network-history", label: "History", icon: BarChart3 },
   { href: "/insights", label: "Insights", icon: ChartNoAxesCombined },

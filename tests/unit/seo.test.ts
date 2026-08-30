@@ -4,6 +4,8 @@ import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { SITE_DATASET } from "@/data/siteDataset";
 import { createPageMetadata, SITE_ORIGIN } from "@/lib/seo";
+import { COVERAGE_GUIDES } from "@/features/seo-coverage/content";
+import { getCoverageCities, getCoverageOperators } from "@/server/coverage/catalog";
 
 describe("SEO discovery controls", () => {
   it("publishes one canonical origin and only indexable sitemap routes", () => {
@@ -14,6 +16,11 @@ describe("SEO discovery controls", () => {
     expect(new Set(urls).size).toBe(urls.length);
     expect(urls.every((url) => url.startsWith(`${SITE_ORIGIN}/`) || url === SITE_ORIGIN)).toBe(true);
     expect(urls).toContain(`${SITE_ORIGIN}/5g-coverage-map-pakistan`);
+    expect(urls).toContain(`${SITE_ORIGIN}/coverage`);
+    expect(urls).toContain(`${SITE_ORIGIN}/reports/pakistan-5g-rollout-august-2026`);
+    for (const city of getCoverageCities()) expect(urls).toContain(`${SITE_ORIGIN}/coverage/${city.slug}`);
+    for (const operator of getCoverageOperators()) expect(urls).toContain(`${SITE_ORIGIN}/operators/${operator.slug}`);
+    for (const guide of COVERAGE_GUIDES) expect(urls).toContain(`${SITE_ORIGIN}/guides/${guide.slug}`);
     expect(urls).toContain(`${SITE_ORIGIN}/methodology`);
     expect(urls).not.toContain(`${SITE_ORIGIN}/bug-report`);
     expect(urls).not.toContain(`${SITE_ORIGIN}/suggestions`);

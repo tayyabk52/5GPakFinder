@@ -12,7 +12,6 @@ export const metadata = createPageMetadata({
 });
 
 const datasetDescription = "A compiled GeoJSON dataset of provider-published Pakistan 5G site locations: 538 Jazz records, 301 Zong records, and 93 Ufone / Onic records. The records describe reported site locations, not measured signal coverage.";
-const pageReviewedAt = "2026-08-30";
 
 const coverageChecks = [
   { title: "Search your area", text: "Enter a city, neighbourhood, road, or landmark. The map can move to a matching Pakistan location even when a site record has no city label." },
@@ -25,7 +24,7 @@ const commonQuestions = [
   { question: "Is 5G available everywhere in Pakistan?", answer: "No. The map shows discrete provider-published site records in a dated release, not continuous nationwide coverage. An area between markers should not be assumed to have 5G." },
   { question: "Which Pakistan networks are included?", answer: "This release includes Jazz, Zong, and Ufone / Onic source records. The record totals are not a ranking of network quality, subscribers, geographic coverage, or current live-site totals." },
   { question: "Does the nearest 5G site guarantee a signal?", answer: "No. A site point does not model antenna direction, spectrum, terrain, buildings, congestion, maintenance, account eligibility, or handset support." },
-  { question: "How current is this coverage data?", answer: `The downloadable map dataset is a snapshot retrieved ${formatDate(SITE_DATASET.retrievedAt)}. This page and its source links were reviewed ${formatDate(pageReviewedAt)}. Operators can publish changes between 5GPak releases.` },
+  { question: "How current is this coverage data?", answer: `The downloadable map dataset is a snapshot retrieved ${formatDate(SITE_DATASET.retrievedAt)}. This page and its source links were reviewed ${formatDate(SITE_DATASET.reviewedAt)}. Operators can publish changes between 5GPak releases.` },
 ] as const;
 
 export default function Pakistan5GCoveragePage() {
@@ -133,8 +132,8 @@ export default function Pakistan5GCoveragePage() {
 
       <section aria-labelledby="use-data" className="border-t border-slate-200 pt-8">
         <h2 id="use-data" className="text-2xl font-bold text-slate-950">Explore the evidence behind the map</h2>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3"><TextLink href="/map" title="Interactive coverage map" text="Filter operator site records and optional community layers." /><TextLink href="/insights/reddit-speedtests" title="Reddit speed-test sample" text="Review extracted measurements, exclusions, and source provenance." /><TextLink href="/methodology" title="Collection methodology" text="Understand source handling, aggregation, precision, and limitations." /></div>
-        <p className="mt-6 text-xs leading-5 text-slate-500">Page reviewed {formatDate(pageReviewedAt)}. Dataset snapshot retrieved {formatDate(SITE_DATASET.retrievedAt)}.</p>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><TextLink href="/map" title="Interactive coverage map" text="Filter operator site records and optional community layers." /><TextLink href="/coverage" title="Coverage by city" text="Compare source records across major Pakistan cities." /><TextLink href="/reports/pakistan-5g-rollout-august-2026" title="August 2026 report" text="Read the dated baseline and provider source audit." /><TextLink href="/methodology" title="Collection methodology" text="Understand source handling, aggregation, precision, and limitations." /></div>
+        <p className="mt-6 text-xs leading-5 text-slate-500">Page reviewed {formatDate(SITE_DATASET.reviewedAt)}. Dataset snapshot retrieved {formatDate(SITE_DATASET.retrievedAt)}.</p>
       </section>
     </div>
   </main>;

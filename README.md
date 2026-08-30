@@ -90,11 +90,15 @@ The sitemap is generated at `https://www.5gpakistan.app/sitemap.xml`. Google rec
 After the live test succeeds, use **Request indexing** for these pages in order:
 
 1. `https://www.5gpakistan.app/`
-2. `https://www.5gpakistan.app/5g-coverage-map-pakistan`
-3. `https://www.5gpakistan.app/map`
-4. `https://www.5gpakistan.app/methodology`
-5. `https://www.5gpakistan.app/insights`
-6. `https://www.5gpakistan.app/insights/reddit-speedtests`
+2. `https://www.5gpakistan.app/coverage`
+3. `https://www.5gpakistan.app/5g-coverage-map-pakistan`
+4. `https://www.5gpakistan.app/reports/pakistan-5g-rollout-august-2026`
+5. `https://www.5gpakistan.app/coverage/karachi`
+6. `https://www.5gpakistan.app/coverage/lahore`
+7. `https://www.5gpakistan.app/coverage/islamabad`
+8. `https://www.5gpakistan.app/guides/how-to-check-5g-coverage-pakistan`
+9. `https://www.5gpakistan.app/map`
+10. `https://www.5gpakistan.app/methodology`
 
 Do not request indexing for `/bug-report`, `/suggestions`, `/api/*`, or individual Reddit evidence records. Those routes intentionally use `noindex` or an `X-Robots-Tag`.
 
@@ -131,8 +135,23 @@ The repository includes:
 - `WebSite`, `Organization`, `AboutPage`, breadcrumb, and factual `Dataset` JSON-LD.
 - A generated 1200 x 630 social preview image and existing app icons.
 - Server-rendered coverage, methodology, and About pages with crawlable internal links.
+- Reusable, server-rendered city, operator, comparison, guide, and dated report pages backed by the published GeoJSON release.
 - `noindex` controls for utility forms, API routes, and low-value individual evidence records.
 - Regression tests that compare published provider counts and sources with `public/data/sites.geojson`.
+
+### Publishing a coverage update
+
+Do not change counts or create a city page from an unreviewed claim. Use this workflow:
+
+1. Run `npm.cmd run data:providers:audit` while online. It compares Jazz KML and Zong LOCS record counts with the release and reports the Ufone source status.
+2. Run `npm.cmd run test`; the release regression tests validate all published GeoJSON counts and source URLs. If the separate parent `maps_data/pakistan_5g_sites_master.geojson` source workspace is available, also run `npm.cmd run data:validate`.
+3. If an official source count changed, retain the old release until the new records have been parsed, reviewed, and rebuilt. Update `src/data/siteDataset.ts` only with a new retrieval date and a factual source-review note.
+4. Add a city to `CITY_DEFINITIONS` in `src/server/coverage/catalog.ts` only when the dataset can derive a non-zero, reviewable city group. Do not generate hundreds of thin location pages.
+5. Run `npm.cmd run test`, `npm.cmd run typecheck`, and `npm.cmd run build` before pushing.
+6. After deployment, run Search Console **Test live URL** on `/coverage` and the dated report, then resubmit `sitemap.xml` if its URL set changed.
+7. In Search Console Performance, filter **Country: Pakistan** and compare city, operator, English, and Roman Urdu queries over 28-day periods. Improve pages that earn impressions but have weak click-through rate; do not stuff alternate spellings into copy.
+
+The August 2026 review found 538 Jazz KML Point placemarks and 301 Zong LOCS records. Zong's visible banner stated 304 sites, so 5GPak uses the auditable array count. The original Ufone source URL returned 404; its dated 93-record snapshot stays available with that limitation visible until an official replacement is verified.
 
 Google implementation references:
 

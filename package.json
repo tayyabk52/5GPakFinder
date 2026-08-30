@@ -14,6 +14,7 @@
     "test:e2e": "playwright test",
     "data:validate": "npx tsx scripts/validate-sites.ts",
     "data:build": "npx tsx scripts/build-sites.ts",
+    "data:providers:audit": "tsx scripts/audit-provider-sources.ts",
     "data:reddit:review": "tsx scripts/reddit-speedtests/generate-review.ts",
     "data:reddit:validate": "tsx scripts/reddit-speedtests/validate.ts",
     "data:reddit:import": "tsx scripts/reddit-speedtests/import.ts",
