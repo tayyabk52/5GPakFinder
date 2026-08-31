@@ -3,6 +3,7 @@ import { SITE_DATASET } from "@/data/siteDataset";
 import { ContentSection, CoverageHeader, CoveragePageFrame, EvidenceNote, Metrics, RelatedLinks, SourceLink, formatCoverageDate } from "@/features/seo-coverage/CoveragePage";
 import { getCoverageCities, getCoverageReviewFacts } from "@/server/coverage/catalog";
 import { absoluteUrl, createPageMetadata, SITE_NAME } from "@/lib/seo";
+import { datasetLicenseJsonLd } from "@/lib/datasetLicense";
 
 export const metadata = createPageMetadata({ title: "Pakistan 5G Rollout Report: August 2026", description: "A dated baseline of 932 Jazz, Zong and Ufone / Onic provider-published 5G site records, with city totals and source audit findings.", path: "/reports/pakistan-5g-rollout-august-2026" });
 
@@ -10,7 +11,7 @@ export default function AugustRolloutReportPage() {
   const facts = getCoverageReviewFacts();
   const cities = getCoverageCities();
   return <CoveragePageFrame>
-    <JsonLd data={{ "@context": "https://schema.org", "@type": "Report", name: "Pakistan 5G rollout report: August 2026", description: "A dated baseline of provider-published Pakistan 5G site records and their source review.", url: absoluteUrl("/reports/pakistan-5g-rollout-august-2026"), datePublished: facts.reviewedAt, dateModified: facts.reviewedAt, publisher: { "@type": "Organization", name: SITE_NAME, url: absoluteUrl("/") }, about: { "@type": "Dataset", name: SITE_DATASET.name } }} />
+    <JsonLd data={{ "@context": "https://schema.org", "@type": "Report", name: "Pakistan 5G rollout report: August 2026", description: "A dated baseline of provider-published Pakistan 5G site records and their source review.", url: absoluteUrl("/reports/pakistan-5g-rollout-august-2026"), datePublished: facts.reviewedAt, dateModified: facts.reviewedAt, publisher: { "@type": "Organization", name: SITE_NAME, url: absoluteUrl("/") }, about: { "@type": "Dataset", name: SITE_DATASET.name, description: "A compiled snapshot of provider-published Pakistan 5G site records.", license: datasetLicenseJsonLd() } }} />
     <CoverageHeader eyebrow="Dated rollout baseline" title="Pakistan 5G rollout report: August 2026" description={`A reproducible summary of ${facts.totalSites} provider-published Jazz, Zong and Ufone / Onic site records, their major city groups, and the source conditions found during review.`} breadcrumbs={[{ name: "Home", href: "/" }, { name: "Coverage", href: "/coverage" }, { name: "August 2026 report", href: "/reports/pakistan-5g-rollout-august-2026" }]} primaryHref="/data/sites.geojson" primaryLabel="Download the GeoJSON" />
     <Metrics items={[{ label: "All records", value: facts.totalSites }, ...SITE_DATASET.providers.map((provider) => ({ label: provider.name, value: provider.count }))]} />
     <ContentSection title="Executive findings"><p>The release contains 932 discrete records retrieved {formatCoverageDate(facts.retrievedAt)}. Karachi, Lahore and Islamabad are the three largest derived city groups among the catalogue pages. These totals describe retained source records and should not be read as continuous geographic coverage, live-site totals or service-quality rankings.</p></ContentSection>

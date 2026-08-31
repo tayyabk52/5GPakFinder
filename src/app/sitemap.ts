@@ -21,6 +21,7 @@ const routes = [
   "/about",
   "/privacy",
   "/terms",
+  "/dataset-license/v1",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {

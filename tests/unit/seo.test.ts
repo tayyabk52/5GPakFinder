@@ -4,6 +4,7 @@ import robots from "@/app/robots";
 import sitemap from "@/app/sitemap";
 import { SITE_DATASET } from "@/data/siteDataset";
 import { createPageMetadata, SITE_ORIGIN } from "@/lib/seo";
+import { DATASET_LICENSE_NAME, DATASET_LICENSE_PATH, datasetLicenseJsonLd } from "@/lib/datasetLicense";
 import { COVERAGE_GUIDES } from "@/features/seo-coverage/content";
 import { getCoverageCities, getCoverageOperators } from "@/server/coverage/catalog";
 
@@ -18,12 +19,34 @@ describe("SEO discovery controls", () => {
     expect(urls).toContain(`${SITE_ORIGIN}/5g-coverage-map-pakistan`);
     expect(urls).toContain(`${SITE_ORIGIN}/coverage`);
     expect(urls).toContain(`${SITE_ORIGIN}/reports/pakistan-5g-rollout-august-2026`);
+    expect(urls).toContain(`${SITE_ORIGIN}${DATASET_LICENSE_PATH}`);
     for (const city of getCoverageCities()) expect(urls).toContain(`${SITE_ORIGIN}/coverage/${city.slug}`);
     for (const operator of getCoverageOperators()) expect(urls).toContain(`${SITE_ORIGIN}/operators/${operator.slug}`);
     for (const guide of COVERAGE_GUIDES) expect(urls).toContain(`${SITE_ORIGIN}/guides/${guide.slug}`);
     expect(urls).toContain(`${SITE_ORIGIN}/methodology`);
     expect(urls).not.toContain(`${SITE_ORIGIN}/bug-report`);
     expect(urls).not.toContain(`${SITE_ORIGIN}/suggestions`);
+  });
+
+  it("publishes one versioned license for every Dataset schema", () => {
+    expect(datasetLicenseJsonLd()).toEqual({
+      "@type": "CreativeWork",
+      name: DATASET_LICENSE_NAME,
+      url: `${SITE_ORIGIN}${DATASET_LICENSE_PATH}`,
+    });
+
+    const datasetPages = [
+      "src/app/5g-coverage-map-pakistan/page.tsx",
+      "src/app/insights/reddit-speedtests/page.tsx",
+      "src/app/coverage/[city]/page.tsx",
+      "src/app/operators/[operator]/page.tsx",
+      "src/app/reports/pakistan-5g-rollout-august-2026/page.tsx",
+    ];
+    for (const path of datasetPages) {
+      const source = readFileSync(path, "utf8");
+      expect(source).toContain('"@type": "Dataset"');
+      expect(source).toContain("license: datasetLicenseJsonLd()");
+    }
   });
 
   it("allows public crawling, excludes API endpoints, and declares the sitemap", () => {

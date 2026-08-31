@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, Database, MapPinned, RadioTower, Search, Shie
 import Breadcrumbs from "@/components/Breadcrumbs";
 import JsonLd from "@/components/JsonLd";
 import { SITE_DATASET } from "@/data/siteDataset";
+import { DATASET_LICENSE_NAME, DATASET_LICENSE_PATH, datasetLicenseJsonLd } from "@/lib/datasetLicense";
 import { absoluteUrl, createPageMetadata, SITE_NAME } from "@/lib/seo";
 
 export const metadata = createPageMetadata({
@@ -42,6 +43,7 @@ export default function Pakistan5GCoveragePage() {
     mainEntityOfPage: absoluteUrl("/5g-coverage-map-pakistan"),
     keywords: ["Pakistan 5G coverage", "Jazz 5G sites", "Zong 5G sites", "Ufone 5G sites", "GeoJSON"],
     isAccessibleForFree: true,
+    license: datasetLicenseJsonLd(),
     spatialCoverage: { "@type": "Place", name: "Pakistan" },
     isBasedOn: SITE_DATASET.providers.map((provider) => provider.sourceUrl),
     measurementTechnique: "Compilation of provider-published coordinates and geocoding of provider-published location records",
@@ -88,6 +90,7 @@ export default function Pakistan5GCoveragePage() {
           {SITE_DATASET.providers.map((provider) => <Stat key={provider.name} value={provider.count.toLocaleString("en-PK")} label={provider.name} />)}
         </div>
         <p className="mt-4 text-sm leading-6 text-slate-500">Source material retrieved {formatDate(SITE_DATASET.retrievedAt)}. Counts describe records in this release, not nationwide population coverage or each operator&apos;s current live-site total. Provider pages can change before the next map release.</p>
+        <p className="mt-3 text-sm text-slate-600">Dataset use: <Link href={DATASET_LICENSE_PATH} className="font-semibold text-[#126c85] underline underline-offset-2">{DATASET_LICENSE_NAME}</Link>.</p>
         <a href="/data/sites.geojson" download className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-bold text-slate-800 hover:border-slate-500">Download the GeoJSON snapshot <Database size={16} /></a>
       </section>
 
